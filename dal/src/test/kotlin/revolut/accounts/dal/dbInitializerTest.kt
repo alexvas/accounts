@@ -34,6 +34,7 @@ class DbInitializerTest {
         val settlementAccount = accounts[0]
         assertThat(settlementAccount).isNotNull
         assertThat(settlementAccount.userId).isEqualTo(userId)
+        assertThat(settlementAccount.settlement).isTrue()
     }
 
 

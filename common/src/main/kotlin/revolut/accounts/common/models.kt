@@ -18,7 +18,8 @@ inline class AccountId(val id: UUID)
 data class Account(
         val id: AccountId,
         val userId: UserId,
-        val amount: UInt
+        val amount: UInt,
+        val settlement: Boolean
 )
 
 inline class T9nId(val id: UUID)
