@@ -14,33 +14,33 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE users
 (
-    id                    UUID NOT NULL PRIMARY KEY default gen_random_uuid(),
-    settlement_account_id UUID NOT NULL -- an account to credit on incoming money transfer
+    id UUID NOT NULL PRIMARY KEY default gen_random_uuid()
 );
 
 CREATE TABLE accounts
 (
-    id          UUID NOT NULL PRIMARY KEY default gen_random_uuid(),
-    user_id     UUID NOT NULL
+    id         UUID NOT NULL PRIMARY KEY default gen_random_uuid(),
+    user_id    UUID NOT NULL
         CONSTRAINT accounts_users_ref REFERENCES users DEFERRABLE,
-    amount      INT -- for simplicity assume money amount is positive integer and currency is always the same
-        CONSTRAINT accounts_non_negative_amount CHECK ( amount >= 0 )
+    amount     INT  NOT NULL             DEFAULT 0 -- for simplicity assume money amount is positive integer and currency is always the same
+        CONSTRAINT accounts_non_negative_amount CHECK ( amount >= 0 ),
+    /**
+     * In the scenario of user-to-user money transfer the one who sends money identifies recipient first
+     * e.g. by his or her phone (phone number excluded from user details for brevity) and then is
+     * immediately able to make a transaction. In this scenario one does not need to know other's
+     * settlement account number to initiate transfer. Here is a flag to mark some account as settlement one.
+     */
+    settlement BOOL CHECK ( settlement IS NULL OR settlement )
 );
 CREATE INDEX accounts_users_key
     ON accounts (user_id);
 
 /**
- * In the scenario of user-to-user money transfer the one who sends money identifies recipient first
- * e.g. by his or her phone (phone number excluded from user details for brevity) and then is 
- * immediately able to make a transaction. In this scenario one does not need to know other's 
- * settlement account number to initiate transfer. This in turn means user entity must possess a 
- * reference to their settlement account. So here a cyclic dependency is. Cyclic dependency is a bad 
- * thing, but we go for it in our case.
+ * Here is an index to force at max one account per user be a settlement account. Unfortunately this way
+ * it is not possible to enforce that every user actually _will_ have such account. Fortunately this way
+ * we avoid cyclic dependencies between users and accounts tables.
  */
-ALTER TABLE users
-    ADD CONSTRAINT users_settlement_account_ref FOREIGN KEY (settlement_account_id) REFERENCES accounts DEFERRABLE;
-CREATE INDEX users_settlement_account_key
-    ON users (settlement_account_id);
+CREATE UNIQUE INDEX accounts_one_settlement_per_user_max ON accounts (user_id, settlement) WHERE settlement IS NOT NULL;
 
 /**
  * Here are states that FSM is based on.

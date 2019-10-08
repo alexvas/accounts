@@ -109,3 +109,20 @@ interface Db {
     fun creditRecipient(t9nId: T9nId) : Validated<Err, OK>
 
 }
+
+/**
+ * As the test task is "Keep it simple and up to the point"
+ * here are supplementary functions to fill database.
+ *
+ * These functions are not intended to use in API calls,
+ * so they are simplified a bit. E.g. entity creation operations
+ * are not idempotent.
+ */
+interface DbInitializer {
+
+    /**
+     * create a user with their settlement account
+     */
+    fun createUser() : User
+
+}

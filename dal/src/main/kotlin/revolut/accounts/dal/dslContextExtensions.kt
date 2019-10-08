@@ -8,18 +8,23 @@ import revolut.accounts.common.ErrCode
 import revolut.accounts.common.T9n
 import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.T9nId
+import revolut.accounts.common.User
 import revolut.accounts.common.UserId
 import revolut.accounts.common.Valid
 import revolut.accounts.common.Validated
-import revolute.accounts.dal.jooq.Tables
+import revolute.accounts.dal.jooq.Tables.ACCOUNTS
+import revolute.accounts.dal.jooq.Tables.T9NS
+import revolute.accounts.dal.jooq.Tables.USERS
 import revolute.accounts.dal.jooq.enums.T9nState
+import revolute.accounts.dal.jooq.tables.records.AccountsRecord
+import revolute.accounts.dal.jooq.tables.records.UsersRecord
 
 
 internal fun DSLContext.findT9n(t9nId: T9nId?): Validated<Err, T9n?> = Valid(
         t9nId
                 ?.let {
-                    selectFrom(Tables.T9NS)
-                            .where(Tables.T9NS.ID.eq(it.id))
+                    selectFrom(T9NS)
+                            .where(T9NS.ID.eq(it.id))
                             .fetchOne()
                             ?: return invalid(ErrCode.T9N_NOT_FOUND, "no transaction found for $it")
                 }
@@ -28,13 +33,13 @@ internal fun DSLContext.findT9n(t9nId: T9nId?): Validated<Err, T9n?> = Valid(
 
 internal fun DSLContext.insertT9n(externalId: T9nExternalId, fromUserId: UserId, fromAccountId: AccountId, toUserId: UserId, amount: UInt) {
     insertInto(
-            Tables.T9NS,
-            Tables.T9NS.EXTERNAL_ID,
-            Tables.T9NS.FROM_USER,
-            Tables.T9NS.FROM_ACCOUNT,
-            Tables.T9NS.TO_USER,
-            Tables.T9NS.TO_ACCOUNT,
-            Tables.T9NS.AMOUNT
+            T9NS,
+            T9NS.EXTERNAL_ID,
+            T9NS.FROM_USER,
+            T9NS.FROM_ACCOUNT,
+            T9NS.TO_USER,
+            T9NS.TO_ACCOUNT,
+            T9NS.AMOUNT
     )
             .select(
                     select(
@@ -42,27 +47,37 @@ internal fun DSLContext.insertT9n(externalId: T9nExternalId, fromUserId: UserId,
                             DSL.inline(fromUserId.id),
                             DSL.inline(fromAccountId.id),
                             DSL.inline(toUserId.id),
-                            Tables.USERS.SETTLEMENT_ACCOUNT_ID,
+                            ACCOUNTS.ID,
                             DSL.inline(amount.toInt())
                     )
-                            .from(Tables.USERS)
-                            .where(Tables.USERS.ID.eq(fromUserId.id))
+                            .from(ACCOUNTS)
+                            .where(ACCOUNTS.USER_ID.eq(fromUserId.id).and(ACCOUNTS.SETTLEMENT))
             )
 }
 
 internal fun DSLContext.userExists(userId: UserId) =
-        fetchExists(select().from(Tables.USERS).where(Tables.USERS.ID.eq(userId.id)))
+        fetchExists(select().from(USERS).where(USERS.ID.eq(userId.id)))
 
 internal fun DSLContext.updateT9nState(t9nId: T9nId, currentState: T9nState, targetState: T9nState): Boolean {
-    return 1 == update(Tables.T9NS)
-            .set(Tables.T9NS.STATE, targetState)
+    return 1 == update(T9NS)
+            .set(T9NS.STATE, targetState)
             .where(
-                    Tables.T9NS.ID.eq(t9nId.id)
+                    T9NS.ID.eq(t9nId.id)
                             .and(
                                     // Even the current state is already guarded by the "... FOR NO KEY UPDATE" clause,
                                     // let's add the condition anyway to be on the safe side.
-                                    Tables.T9NS.STATE.eq(currentState)
+                                    T9NS.STATE.eq(currentState)
                             )
             )
             .execute()
+}
+
+internal fun DSLContext.newUser(): UsersRecord = newRecord(USERS).apply { store() }
+
+internal fun DSLContext.newAccount(owner: User, setSettlement: Boolean = false): AccountsRecord = newRecord(ACCOUNTS).apply {
+    userId = owner.id.id
+    if (setSettlement) {
+        settlement = true
+    }
+    store()
 }

@@ -44,6 +44,10 @@ dependencies {
     implementation(Libs.postgresql)
     implementation(Libs.hikaricp)
 
+    // since we are running in-memory db
+    implementation(Libs.otj_pg_embedded)
+    implementation(Libs.liquibase_core)
+
     // jOOQ Open Source Edition
     implementation(Libs.jooq)
     implementation(Libs.jooq_meta)
@@ -53,8 +57,6 @@ dependencies {
 
     testImplementation(project(":common", JarTest.configurationName))
     testImplementation(Libs.dbsetup_kotlin)
-    testImplementation(Libs.otj_pg_embedded)
-    testImplementation(Libs.liquibase_core)
 }
 
 fun JooqExtension.applyCfg(configName: String, sourceSet: SourceSet, closure: Action<Configuration>) {
