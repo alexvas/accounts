@@ -1,0 +1,111 @@
+package revolut.accounts.common
+
+/**
+ * The way to live in a world without checked exceptions
+ */
+sealed class Validated<out E, out R>
+
+data class Invalid<E>(val err: E) : Validated<E, Nothing>()
+data class Valid<R>(val value: R) : Validated<Nothing, R>()
+
+object OK
+
+val ok = Valid(OK)
+
+enum class ErrCode {
+    INTERNAL,              // i.e. internal server error
+    USER_NOT_FOUND,
+    ACCOUNT_NOT_FOUND,
+    T9N_NOT_FOUND,
+    OTHERS_ACCOUNT,        // the user does not own the account
+    INSUFFICIENT_FUNDS,    // not enough money to perform requested transaction
+    FUNDS_OVERFLOW,        // too much money on receiver's account
+    ENTITY_ALREADY_EXISTS, // different entity with the same external ID already exists
+}
+
+data class Err(
+        val code: ErrCode,
+        val msg: String = ""
+)
+
+interface Db {
+
+    /**
+     * What my accounts are?
+     * returns all user's accounts
+     */
+    fun accounts(userId: UserId): Validated<Err, List<Account>>
+
+    /**
+     * What brings me money?
+     * get a page of user's transactions using SEEK method
+     * see https://blog.jooq.org/2013/11/18/faster-sql-pagination-with-keysets-continued/
+     *
+     * @param userId -- recipient of transactions
+     * @param lastT9nId -- previous page boundary. If set, return list following transactions
+     * @param limit -- haw many result needed
+     */
+    fun incomingTransactions(userId: UserId, lastT9nId: T9nId?, limit: UInt): Validated<Err, List<T9n>>
+
+    /**
+     * What takes my money away?
+     * get a page of user's transactions using SEEK method
+     *
+     * @param userId -- initiator of transactions
+     * @param lastT9nId -- previous page boundary. If set, return list following transactions
+     * @param limit -- haw many result needed
+     */
+    fun outgoingTransactions(userId: UserId, lastT9nId: T9nId?, limit: UInt): Validated<Err, List<T9n>>
+
+    /* to be implemented in the next phase:
+     * How I manage my money?
+     * get a page of user's transactions using SEEK method
+     *
+     * @param userId -- owner of transactions
+     * @param lastT9nId -- previous page boundary. If set, return list following transactions
+     * @param limit -- haw many result needed
+       fun selfTransactions(userId: UserId, lastT9nId: T9nId?, limit: UInt)
+     */
+
+    fun checkIfAccountBelongsToUser(accountId: AccountId, userId: UserId): Boolean
+
+    /**
+     * send money to somebody
+     *
+     * @param externalId is used to make operation idempotent
+     * @param fromUserId who is sending money
+     * @param fromAccountId what account should be debited. The account must belong to the sender.
+     * @param toUserId who is transaction recipient
+     * @param amount of money to send
+     *
+     * @return either created transaction in INITIATED state or error
+     */
+    fun createOutgoingTransaction(
+            externalId: T9nExternalId,
+            fromUserId: UserId,
+            fromAccountId: AccountId,
+            toUserId: UserId,
+            amount: UInt
+    ) : Validated<Err, T9n>
+
+    /**
+     * atomically both debit sender and
+     * change transaction state INITIATED => DEBITED
+     * if sender got enough money to perform a transaction
+     *
+     * in the case of insufficient funds
+     * change transaction state INITIATED => DECLINED
+     * and return correspondent error
+     *
+     * in the case t9n already left INITIATED state, no debit is needed,
+     * the operation will return false
+     */
+    fun debitSender(t9nId: T9nId) : Validated<Err, Boolean>
+
+    /**
+     * atomically both credit recipient and
+     * change transaction state DEBITED => COMPLETED
+     */
+    fun creditRecipient(t9nId: T9nId) : Validated<Err, OK>
+
+}
