@@ -125,4 +125,8 @@ interface DbInitializer {
      */
     fun createUser() : User
 
+    /**
+     * create a (non-settlement) account for given user
+     */
+    fun createAccount(user: User, amount: UInt): Account
 }

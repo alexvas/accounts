@@ -30,7 +30,7 @@ CREATE TABLE accounts
      * immediately able to make a transaction. In this scenario one does not need to know other's
      * settlement account number to initiate transfer. Here is a flag to mark some account as settlement one.
      */
-    settlement BOOL CHECK ( settlement IS NULL OR settlement )
+    settlement BOOL NOT NULL DEFAULT FALSE
 );
 CREATE INDEX accounts_users_key
     ON accounts (user_id);
@@ -40,7 +40,7 @@ CREATE INDEX accounts_users_key
  * it is not possible to enforce that every user actually _will_ have such account. Fortunately this way
  * we avoid cyclic dependencies between users and accounts tables.
  */
-CREATE UNIQUE INDEX accounts_one_settlement_per_user_max ON accounts (user_id, settlement) WHERE settlement IS NOT NULL;
+CREATE UNIQUE INDEX accounts_one_settlement_per_user_max ON accounts (user_id, settlement) WHERE settlement;
 
 /**
  * Here are states that FSM is based on.

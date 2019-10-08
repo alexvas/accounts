@@ -17,8 +17,6 @@ import revolute.accounts.dal.jooq.Tables.T9NS
 import revolute.accounts.dal.jooq.Tables.USERS
 import revolute.accounts.dal.jooq.enums.T9nState
 import revolute.accounts.dal.jooq.tables.records.AccountsRecord
-import revolute.accounts.dal.jooq.tables.records.UsersRecord
-
 
 internal fun DSLContext.findT9n(t9nId: T9nId?): Validated<Err, T9n?> = Valid(
         t9nId
@@ -72,12 +70,12 @@ internal fun DSLContext.updateT9nState(t9nId: T9nId, currentState: T9nState, tar
             .execute()
 }
 
-internal fun DSLContext.newUser(): UsersRecord = newRecord(USERS).apply { store() }
-
-internal fun DSLContext.newAccount(owner: User, setSettlement: Boolean = false): AccountsRecord = newRecord(ACCOUNTS).apply {
-    userId = owner.id.id
-    if (setSettlement) {
-        settlement = true
+internal fun DSLContext.newAccount(owner: User, settlement: Boolean = false, amount: UInt = 0U): AccountsRecord = newRecord(ACCOUNTS).apply {
+    require(amount < Integer.MAX_VALUE.toUInt()) {
+        "when creating ${if (settlement) "" else "non"}settlement account for user $owner the amount $amount is too large"
     }
+    userId = owner.id.id
+    this.settlement = settlement
+    this.amount = amount.toInt()
     store()
 }
