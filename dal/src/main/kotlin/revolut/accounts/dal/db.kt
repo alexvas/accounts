@@ -31,6 +31,8 @@ import revolute.accounts.dal.jooq.enums.T9nState.OVERFLOW
 import revolute.accounts.dal.jooq.tables.Accounts.ACCOUNTS
 import revolute.accounts.dal.jooq.tables.records.AccountsRecord
 import revolute.accounts.dal.jooq.tables.records.T9nsRecord
+import java.time.Duration
+import java.time.Instant
 
 typealias SelectAccountsQuery = (SelectWhereStep<AccountsRecord>) -> ResultQuery<AccountsRecord>
 typealias SelectT9nsQuery = (SelectWhereStep<T9nsRecord>) -> ResultQuery<T9nsRecord>
@@ -256,6 +258,27 @@ class DbImpl(
             return@tx internal("wrong number of t9ns updated to overflow for $t9nId")
 
         ok
+    }
+
+    override fun staleInitiated(durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n> {
+        log.trace("stale initiated transactions for duration = {}, with maximum batch size = {}", durationToBecomeStale, maxBatchSize)
+        return stale(T9n.State.INITIATED, durationToBecomeStale, maxBatchSize)
+    }
+
+    override fun staleDebited(durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n> {
+        log.trace("stale debited transactions for duration = {}, with maximum batch size = {}", durationToBecomeStale, maxBatchSize)
+        return stale(T9n.State.DEBITED, durationToBecomeStale, maxBatchSize)
+    }
+
+    private fun stale(state: T9n.State, durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n> = tx {
+        return@tx selectT9nList {
+            it
+                    .where(
+                            T9NS.STATE.eq(state.convert())
+                                    .and(T9NS.MODIFIED.le(Instant.now().minus(durationToBecomeStale).convert()))
+                    )
+                    .limit(maxBatchSize.toInt())
+        }
     }
 
     // --- supplementary functions and variables ---

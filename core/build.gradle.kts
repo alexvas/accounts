@@ -14,11 +14,10 @@ repositories {
 dependencies {
     implementation(Libs.kotlin_stdlib_jdk8)
     implementation(Libs.kotlinx_coroutines_core)
-    implementation(Libs.atomicfu)
+
+    implementation(project(":common"))
 
     implementation(Libs.log4j_api)
-
-    implementation(Libs.jackson_annotations)
 }
 
 val compileKotlin: KotlinCompile by tasks

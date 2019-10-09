@@ -1,5 +1,8 @@
 package revolut.accounts.common
 
+import kotlinx.coroutines.CoroutineScope
+import java.time.Duration
+
 /**
  * The way to live in a world without checked exceptions
  */
@@ -108,6 +111,10 @@ interface Db {
      */
     fun creditRecipient(t9nId: T9nId): Validated<Err, OK>
 
+    fun staleInitiated(durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n>
+
+    fun staleDebited(durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n>
+
 }
 
 fun Db.accounts(user: User) = accounts(user.id)
@@ -141,4 +148,30 @@ interface DbInitializer {
      * create a (non-settlement) account for given user
      */
     fun createAccount(user: User, amount: UInt): Account
+}
+
+/**
+ * Business logic sits here
+ */
+interface T9nProcessor {
+
+    /**
+     * periodically check for stale transactions
+     * and handle them
+     */
+    fun setupStaleChecks()
+
+    /**
+     * Create t9n in Database, fork it's processing and return t9n in it's initial state to the caller
+     *
+     * see Db.createOutgoingTransaction for parameter description
+     */
+    fun CoroutineScope.makeT9n(
+            externalId: T9nExternalId,
+            fromUserId: UserId,
+            fromAccountId: AccountId,
+            toUserId: UserId,
+            amount: UInt
+    ): Validated<Err, T9n>
+
 }

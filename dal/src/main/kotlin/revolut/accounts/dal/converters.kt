@@ -3,6 +3,11 @@ package revolut.accounts.dal
 import revolut.accounts.common.Account
 import revolut.accounts.common.AccountId
 import revolut.accounts.common.T9n
+import revolut.accounts.common.T9n.State.COMPLETED
+import revolut.accounts.common.T9n.State.DEBITED
+import revolut.accounts.common.T9n.State.DECLINED
+import revolut.accounts.common.T9n.State.INITIATED
+import revolut.accounts.common.T9n.State.OVERFLOW
 import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.T9nId
 import revolut.accounts.common.User
@@ -34,11 +39,19 @@ internal fun T9nsRecord.convert() = T9n(
 )
 
 internal fun T9nState.convert(): T9n.State = when (this) {
-    T9nState.INITIATED -> T9n.State.INITIATED
-    T9nState.DECLINED -> T9n.State.DECLINED
-    T9nState.DEBITED -> T9n.State.DEBITED
-    T9nState.OVERFLOW -> T9n.State.OVERFLOW
-    T9nState.COMPLETED -> T9n.State.COMPLETED
+    T9nState.INITIATED -> INITIATED
+    T9nState.DECLINED -> DECLINED
+    T9nState.DEBITED -> DEBITED
+    T9nState.OVERFLOW -> OVERFLOW
+    T9nState.COMPLETED -> COMPLETED
+}
+
+internal fun T9n.State.convert(): T9nState = when (this) {
+    INITIATED -> T9nState.INITIATED
+    DECLINED ->  T9nState.DECLINED
+    DEBITED -> T9nState.DEBITED
+    OVERFLOW -> T9nState.OVERFLOW
+    COMPLETED -> T9nState.COMPLETED
 }
 
 internal fun AccountsRecord.convert() = Account(

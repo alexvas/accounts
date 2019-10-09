@@ -2,6 +2,8 @@
 
 package revolut.accounts.dal
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Nested
@@ -20,7 +22,9 @@ import revolut.accounts.common.Valid
 import revolut.accounts.common.checkIfAccountBelongsToUser
 import revolut.accounts.common.createOutgoingTransaction
 import revolut.accounts.dal.Deps.db
+import java.time.Duration
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit.SECONDS
 import java.util.*
 
@@ -358,6 +362,63 @@ class DbTest {
             assertThat(err.code).isEqualTo(ErrCode.T9N_NOT_FOUND)
             assertThat(err.msg).contains(randomId.toString())
         }
+    }
+
+    @Test
+    fun`stale transaction handling`() {
+        val alice = newUser
+        val aliceAccount = alice.addAccount(1000_U)
+
+        val bob = newUser
+
+        fun newT9n(amount: UInt) = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount, bob, amount)
+
+        val start1 = newT9n(10_U)
+        val start2 = newT9n(20_U)
+        val start3 = newT9n(30_U)
+
+        db.debitSender(start1.id)
+        db.creditRecipient(start1.id)
+
+        db.debitSender(start2.id)
+
+        val finish1 = alice.findT9n(start1.id)
+        val finish2 = alice.findT9n(start2.id)
+
+        runBlocking { delay(timeMillis = 100) }
+
+        val start4 = newT9n(40_U)
+        val start5 = newT9n(50_U)
+        val start6 = newT9n(60_U)
+
+        db.debitSender(start4.id)
+        db.creditRecipient(start4.id)
+
+        db.debitSender(start5.id)
+
+        val finish4 = alice.findT9n(start4.id)
+        val finish5 = alice.findT9n(start5.id)
+
+        assertThat(finish1.state).isEqualTo(T9n.State.COMPLETED)
+        assertThat(finish2.state).isEqualTo(T9n.State.DEBITED)
+        assertThat(start3.state).isEqualTo(T9n.State.INITIATED)
+        assertThat(finish4.state).isEqualTo(T9n.State.COMPLETED)
+        assertThat(finish5.state).isEqualTo(T9n.State.DEBITED)
+        assertThat(start6.state).isEqualTo(T9n.State.INITIATED)
+
+        val staleDuration: Duration = Duration.of(90, ChronoUnit.MILLIS)
+        val staleMoment = Instant.now().minus(staleDuration)
+
+        assertThat(finish1.modified).isBefore(staleMoment)
+        assertThat(finish2.modified).isBefore(staleMoment)
+        assertThat(start3.modified).isBefore(staleMoment)
+
+        assertThat(finish4.modified).isAfter(staleMoment)
+        assertThat(finish5.modified).isAfter(staleMoment)
+        assertThat(start6.modified).isAfter(staleMoment)
+
+        assertThat(db.staleInitiated(staleDuration, 100500_U)).containsExactly(start3)
+        assertThat(db.staleDebited(staleDuration, 100500_U)).containsExactly(finish2)
     }
 }
 
