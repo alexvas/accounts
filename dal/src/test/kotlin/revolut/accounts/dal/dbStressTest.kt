@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test
 import revolut.accounts.common.T9n
 import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.Valid
+import revolut.accounts.common.accounts
+import revolut.accounts.common.createOutgoingTransaction
 import revolut.accounts.dal.Deps.db
 import revolut.accounts.dal.Deps.dbInitializer
 import java.util.*
@@ -31,8 +33,8 @@ class DbStressTest {
         // at the start both Alice and Bob possess 1M in testerium.
         dbInitializer.createAccount(alice, 1_000_000_U)
 
-        val aliceAccounts = (db.accounts(alice.id) as Valid).value
-        val bobAccount = (db.accounts(bob.id) as Valid).value[0]
+        val aliceAccounts = (db.accounts(alice) as Valid).value
+        val bobAccount = (db.accounts(bob) as Valid).value[0]
 
         // create batch operation plan
 
@@ -43,9 +45,9 @@ class DbStressTest {
             val amount = rand.nextInt(1..500_000).toUInt()
             val t9nExternalId = T9nExternalId(UUID.randomUUID())
             val result = if (rand.nextBoolean())
-                db.createOutgoingTransaction(t9nExternalId, alice.id, aliceAccounts[rand.nextInt(0..1)].id, bob.id, amount)
+                db.createOutgoingTransaction(t9nExternalId, alice, aliceAccounts[rand.nextInt(0..1)], bob, amount)
             else
-                db.createOutgoingTransaction(t9nExternalId, bob.id, bobAccount.id, alice.id, amount)
+                db.createOutgoingTransaction(t9nExternalId, bob, bobAccount, alice, amount)
             t9ns += (result as Valid).value
         }
 
@@ -64,8 +66,8 @@ class DbStressTest {
             }
         }
 
-        val aliceAccountsAfter = (db.accounts(alice.id) as Valid).value
-        val bobAccountAfter = (db.accounts(bob.id) as Valid).value[0]
+        val aliceAccountsAfter = (db.accounts(alice) as Valid).value
+        val bobAccountAfter = (db.accounts(bob) as Valid).value[0]
 
         val alice1 = aliceAccountsAfter[0].amount
         val alice2 = aliceAccountsAfter[1].amount

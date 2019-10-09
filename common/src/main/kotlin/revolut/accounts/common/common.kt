@@ -86,7 +86,7 @@ interface Db {
             fromAccountId: AccountId,
             toUserId: UserId,
             amount: UInt
-    ) : Validated<Err, T9n>
+    ): Validated<Err, T9n>
 
     /**
      * atomically both debit sender and
@@ -100,15 +100,25 @@ interface Db {
      * in the case t9n already left INITIATED state, no debit is needed,
      * the operation will return false
      */
-    fun debitSender(t9nId: T9nId) : Validated<Err, Boolean>
+    fun debitSender(t9nId: T9nId): Validated<Err, Boolean>
 
     /**
      * atomically both credit recipient and
      * change transaction state DEBITED => COMPLETED
      */
-    fun creditRecipient(t9nId: T9nId) : Validated<Err, OK>
+    fun creditRecipient(t9nId: T9nId): Validated<Err, OK>
 
 }
+
+fun Db.accounts(user: User) = accounts(user.id)
+
+fun Db.createOutgoingTransaction(
+        externalId: T9nExternalId,
+        fromUser: User,
+        fromAccount: Account,
+        toUser: User,
+        amount: UInt
+) = createOutgoingTransaction(externalId, fromUser.id, fromAccount.id, toUser.id, amount)
 
 /**
  * As the test task is "Keep it simple and up to the point"
@@ -123,7 +133,7 @@ interface DbInitializer {
     /**
      * create a user with their settlement account
      */
-    fun createUser() : User
+    fun createUser(): User
 
     /**
      * create a (non-settlement) account for given user

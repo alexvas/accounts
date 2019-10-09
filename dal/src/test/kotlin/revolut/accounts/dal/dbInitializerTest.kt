@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import revolut.accounts.common.UserId
 import revolut.accounts.common.Valid
+import revolut.accounts.common.accounts
 import revolut.accounts.dal.Deps.db
 import revolut.accounts.dal.Deps.dbInitializer
 
@@ -42,7 +43,7 @@ class DbInitializerTest {
         val charlieAdditinalAccount = dbInitializer.createAccount(charlie, 100U)
         assertThat(charlieAdditinalAccount.settlement).isFalse()
 
-        val accountsResult = db.accounts(charlie.id)
+        val accountsResult = db.accounts(charlie)
         assertThat(accountsResult).isInstanceOf(Valid::class.java)
 
         val accounts = (accountsResult as Valid).value
