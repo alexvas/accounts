@@ -1,4 +1,4 @@
-@file:Suppress("ClassName")
+@file:Suppress("ClassName", "TestFunctionName")
 
 package revolut.accounts.dal
 
@@ -7,6 +7,7 @@ import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import revolut.accounts.common.Account
+import revolut.accounts.common.AccountId
 import revolut.accounts.common.ErrCode
 import revolut.accounts.common.Invalid
 import revolut.accounts.common.T9n
@@ -106,6 +107,90 @@ class DbTest {
         }
 
     }
+
+    @Nested
+    inner class `debit sender` {
+
+        @Test
+        fun ok() {
+            val alice = newUser
+            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+
+            val bob = newUser
+
+            val externalId = T9nExternalId(UUID.randomUUID())
+
+            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+
+            val result = db.debitSender(alice2bob.id)
+            assertThat(result).isInstanceOf(Valid::class.java)
+            val b = (result as Valid).value
+            assertThat(b).isTrue()
+
+            // re-read account from database
+            val debitedAccount = alice.findAccount(aliceAdditionalAccount.id)
+            assertThat(debitedAccount.amount).isEqualTo(1_000_U - 5U)
+
+            // re-read t9n from database
+            val debitedT9n = alice.findT9n(alice2bob.id)
+            assertThat(debitedT9n.state).isEqualTo(T9n.State.DEBITED)
+        }
+
+        @Test
+        fun idempotence() {
+            val alice = newUser
+            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+
+            val bob = newUser
+
+            val externalId = T9nExternalId(UUID.randomUUID())
+
+            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+
+            db.debitSender(alice2bob.id)
+            // once more
+            val result = db.debitSender(alice2bob.id)
+            assertThat(result).isInstanceOf(Valid::class.java)
+            val b = (result as Valid).value
+            assertThat(b).isFalse() // <-- the only difference from `Debit sender OK`
+
+            // re-read account from database
+            val debitedAccount = alice.findAccount(aliceAdditionalAccount.id)
+            assertThat(debitedAccount.amount).isEqualTo(1_000_U - 5U)
+
+            // re-read t9n from database
+            val debitedT9n = alice.findT9n(alice2bob.id)
+            assertThat(debitedT9n.state).isEqualTo(T9n.State.DEBITED)
+        }
+
+        @Test
+        fun `insufficient funds`() {
+            val alice = newUser
+            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+
+            val bob = newUser
+
+            val externalId = T9nExternalId(UUID.randomUUID())
+
+            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 1_001_U)
+
+            val result = db.debitSender(alice2bob.id)
+            assertThat(result).isInstanceOf(Invalid::class.java)
+            val err = (result as Invalid).err
+            assertThat(err.code).isEqualTo(ErrCode.INSUFFICIENT_FUNDS)
+
+            // re-read account from database
+            val debitedAccount = alice.findAccount(aliceAdditionalAccount.id)
+            assertThat(debitedAccount.amount).isEqualTo(1_000_U)
+
+            // re-read t9n from database
+            val debitedT9n = alice.findT9n(alice2bob.id)
+            assertThat(debitedT9n.state).isEqualTo(T9n.State.DECLINED)
+        }
+
+    }
+
+
 }
 
 internal fun createT9nOk(
@@ -130,3 +215,28 @@ internal fun settlement(userId: UserId): Account {
 }
 
 internal fun User.settlement() = settlement(id)
+
+internal fun User.findAccount(id: AccountId): Account {
+    val result = db.accounts(this.id)
+    assertThat(result).isInstanceOf(Valid::class.java)
+    val accounts = (result as Valid).value
+    val filtered = accounts.filter { it.id == id }
+    assertThat(filtered).hasSize(1)
+    return filtered[0]
+}
+
+internal fun User.findT9n(id: T9nId): T9n {
+    val outResult = db.outgoingTransactions(this.id, null, Integer.MAX_VALUE.toUInt())
+    assertThat(outResult).isInstanceOf(Valid::class.java)
+    val outT9ns = (outResult as Valid).value
+    val outFiltered = outT9ns.filter { it.id == id }
+    assertThat(outFiltered).hasSizeLessThanOrEqualTo(1)
+    if (outFiltered.size == 1) return outFiltered[0]
+
+    val inResult = db.incomingTransactions(this.id, null, Integer.MAX_VALUE.toUInt())
+    assertThat(inResult).isInstanceOf(Valid::class.java)
+    val inT9ns = (inResult as Valid).value
+    val inFiltered = inT9ns.filter { it.id == id }
+    assertThat(inFiltered).hasSize(1)
+    return inFiltered[0]
+}
