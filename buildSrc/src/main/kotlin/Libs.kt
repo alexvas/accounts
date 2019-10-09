@@ -315,6 +315,11 @@ object Libs {
     /**
      * https://github.com/ktorio/ktor
      */
+    const val ktor_jackson: String = "io.ktor:ktor-jackson:" + Versions.io_ktor
+
+    /**
+     * https://github.com/ktorio/ktor
+     */
     const val ktor_client_jackson: String = "io.ktor:ktor-client-jackson:" + Versions.io_ktor
 
     /**

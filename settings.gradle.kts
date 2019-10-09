@@ -4,6 +4,7 @@ include(
         "common",
         "dal",
         "core",
+        "web",
         "integration"
 )
 
