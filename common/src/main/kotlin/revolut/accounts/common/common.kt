@@ -120,6 +120,8 @@ fun Db.createOutgoingTransaction(
         amount: UInt
 ) = createOutgoingTransaction(externalId, fromUser.id, fromAccount.id, toUser.id, amount)
 
+fun Db.checkIfAccountBelongsToUser(account: Account, user: User) = checkIfAccountBelongsToUser(account.id, user.id)
+
 /**
  * As the test task is "Keep it simple and up to the point"
  * here are supplementary functions to fill database.
