@@ -37,6 +37,12 @@ data class T9n(
         val created: Instant,
         val modified: Instant
 ) {
+        init {
+                require(amount > 0U) { "t9n amount must be positive" }
+                require(amount < Integer.MAX_VALUE.toUInt()) { "t9n amount $amount too large" }
+                require(fromUser != toUser) { "transactions between self account are not allowed yet" }
+        }
+
         /**
          * Here are states that FSM based on
          *

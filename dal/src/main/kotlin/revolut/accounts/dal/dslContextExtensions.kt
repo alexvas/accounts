@@ -29,29 +29,30 @@ internal fun DSLContext.findT9n(t9nId: T9nId?): Validated<Err, T9n?> = Valid(
                 ?.convert()
 )
 
-internal fun DSLContext.insertT9n(externalId: T9nExternalId, fromUserId: UserId, fromAccountId: AccountId, toUserId: UserId, amount: UInt) {
-    insertInto(
-            T9NS,
-            T9NS.EXTERNAL_ID,
-            T9NS.FROM_USER,
-            T9NS.FROM_ACCOUNT,
-            T9NS.TO_USER,
-            T9NS.TO_ACCOUNT,
-            T9NS.AMOUNT
-    )
-            .select(
-                    select(
-                            DSL.inline(externalId.id),
-                            DSL.inline(fromUserId.id),
-                            DSL.inline(fromAccountId.id),
-                            DSL.inline(toUserId.id),
-                            ACCOUNTS.ID,
-                            DSL.inline(amount.toInt())
-                    )
-                            .from(ACCOUNTS)
-                            .where(ACCOUNTS.USER_ID.eq(fromUserId.id).and(ACCOUNTS.SETTLEMENT))
-            )
-}
+internal fun DSLContext.insertT9n(externalId: T9nExternalId, fromUserId: UserId, fromAccountId: AccountId, toUserId: UserId, amount: UInt) =
+        insertInto(
+                T9NS,
+                T9NS.EXTERNAL_ID,
+                T9NS.FROM_USER,
+                T9NS.FROM_ACCOUNT,
+                T9NS.TO_USER,
+                T9NS.TO_ACCOUNT,
+                T9NS.AMOUNT
+        )
+                .select(
+                        select(
+                                DSL.inline(externalId.id),
+                                DSL.inline(fromUserId.id),
+                                DSL.inline(fromAccountId.id),
+                                DSL.inline(toUserId.id),
+                                ACCOUNTS.ID,
+                                DSL.inline(amount.toInt())
+                        )
+                                .from(ACCOUNTS)
+                                .where(ACCOUNTS.USER_ID.eq(toUserId.id).and(ACCOUNTS.SETTLEMENT))
+                )
+                .returning()
+                .fetchOne()
 
 internal fun DSLContext.userExists(userId: UserId) =
         fetchExists(select().from(USERS).where(USERS.ID.eq(userId.id)))

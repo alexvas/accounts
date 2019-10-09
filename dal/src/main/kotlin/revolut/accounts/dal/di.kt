@@ -28,8 +28,7 @@ internal class HikariConnectionProvider(
 }
 
 // ragged-DI
-internal class Deps {
-    val ds: HikariDataSource
+internal object Deps {
     val db: Db
     val dbInitializer: DbInitializer
 
@@ -46,7 +45,8 @@ internal class Deps {
             ).update(Contexts())
         }
 
-        ds = HikariDataSource(
+//      val postgresJdbcUrl = "jdbc:postgresql://localhost:5432/revolut?user=revolut"
+        val ds = HikariDataSource(
                 HikariConfig().also { hc -> hc.jdbcUrl = postgresJdbcUrl }
         )
         val connectionProvider = HikariConnectionProvider(ds)

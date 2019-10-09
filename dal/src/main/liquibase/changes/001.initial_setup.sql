@@ -77,7 +77,7 @@ CREATE TABLE t9ns
     to_account   UUID      NOT NULL
         CONSTRAINT t9ns_to_accounts_ref REFERENCES accounts DEFERRABLE,
     amount       INT
-        CONSTRAINT t9ns_non_negative_amount CHECK ( amount >= 0 ),
+        CONSTRAINT t9ns_non_negative_amount CHECK ( amount > 0 ),
     created      TIMESTAMP                      default now(),
     modified     TIMESTAMP                      default now(),
 

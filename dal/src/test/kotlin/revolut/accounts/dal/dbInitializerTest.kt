@@ -4,11 +4,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import revolut.accounts.common.UserId
 import revolut.accounts.common.Valid
+import revolut.accounts.dal.Deps.db
+import revolut.accounts.dal.Deps.dbInitializer
 
 class DbInitializerTest {
-    private val testDeps = TestDeps()
-    private val db = testDeps.deps.db
-    private val dbInitializer = testDeps.deps.dbInitializer
 
     @Test
     fun `users created OK`() {

@@ -53,10 +53,8 @@ dependencies {
     implementation(Libs.jooq_meta)
     implementation(Libs.jooq_codegen)
 
-    implementation(Libs.owner_java8)
-
     testImplementation(project(":common", JarTest.configurationName))
-    testImplementation(Libs.dbsetup_kotlin)
+    testImplementation(Libs.kotlinx_coroutines_core)
 }
 
 fun JooqExtension.applyCfg(configName: String, sourceSet: SourceSet, closure: Action<Configuration>) {

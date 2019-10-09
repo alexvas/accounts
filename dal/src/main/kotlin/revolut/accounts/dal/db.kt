@@ -135,9 +135,10 @@ class DbImpl(
         // todo: uncomment after tests
 //        checkIfT9nsAlreadyExists(externalId, fromUserId, fromAccountId, toUserId, amount)?.let { return@tx it }
 
+        val created: T9nsRecord
         try {
             // ... and then try to write.
-            insertT9n(externalId, fromUserId, fromAccountId, toUserId, amount)
+            created = insertT9n(externalId, fromUserId, fromAccountId, toUserId, amount)
         } catch (e: DataAccessException) {
             if (e.sqlState() != UNIQUE_VIOLATION) {
                 throw e
@@ -148,11 +149,7 @@ class DbImpl(
             throw e
         }
 
-        Valid(
-                selectT9n {
-                    it.where(T9NS.EXTERNAL_ID.eq(externalId.id))
-                }!!
-        )
+        Valid(created.convert())
     }
 
     /**
@@ -175,13 +172,16 @@ class DbImpl(
         // https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-ROWS
         // The lock will guard t9n state we are going to change in the very-very improbable case
         // two debitSenders will run with the same t9nId.
-        val (fromAccountId, amount) = select(T9NS.FROM_ACCOUNT, T9NS.AMOUNT)
+        val result = select(T9NS.FROM_ACCOUNT, T9NS.AMOUNT)
                 .from(T9NS)
                 .where(
                         T9NS.ID.eq(t9nId.id)
                                 .and(T9NS.STATE.eq(INITIATED))
                 ).option("FOR NO KEY UPDATE")
                 .fetchOne()
+                ?: return@tx Valid(false) // t9n already left INITIATED state
+
+        val (fromAccountId, amount) = result
 
         // N.B. #3
         // To prevent mutual locking in concurrent execution the order locks are acquired is very important.
@@ -219,13 +219,16 @@ class DbImpl(
     override fun creditRecipient(t9nId: T9nId): Validated<Err, OK> = tx {
         log.trace("credit recipient t9nId={}", t9nId)
 
-        val (toAccountId, amount) = select(T9NS.TO_ACCOUNT, T9NS.AMOUNT)
+        val result = select(T9NS.TO_ACCOUNT, T9NS.AMOUNT)
                 .from(T9NS)
                 .where(
                         T9NS.ID.eq(t9nId.id)
                                 .and(T9NS.STATE.eq(DEBITED))
                 ).option("FOR NO KEY UPDATE") // again, acquire t9ns' lock first (see debitSender)
                 .fetchOne()
+                ?: return@tx ok // t9n already left DEBITED state or perhaps never entered into it
+
+        val (toAccountId, amount) = result
 
         // ... and then accounts' lock
         val updatedAccountsCount =
