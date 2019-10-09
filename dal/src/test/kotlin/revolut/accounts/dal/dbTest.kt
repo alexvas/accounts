@@ -148,7 +148,7 @@ class DbTest {
             val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
 
             db.debitSender(alice2bob.id)
-            // once more
+            // oops, it did it again
             val result = db.debitSender(alice2bob.id)
             assertThat(result).isInstanceOf(Valid::class.java)
             val b = (result as Valid).value
@@ -186,6 +186,101 @@ class DbTest {
             // re-read t9n from database
             val debitedT9n = alice.findT9n(alice2bob.id)
             assertThat(debitedT9n.state).isEqualTo(T9n.State.DECLINED)
+        }
+
+    }
+
+    @Nested
+    inner class `credit recipient` {
+
+        @Test
+        fun ok() {
+            val alice = newUser
+            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+
+            val bob = newUser
+
+            val externalId = T9nExternalId(UUID.randomUUID())
+
+            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+
+            db.debitSender(alice2bob.id)
+            val result = db.creditRecipient(alice2bob.id)
+
+            assertThat(result).isInstanceOf(Valid::class.java)
+
+            val creditedAccount = bob.settlement()
+            assertThat(creditedAccount.amount).isEqualTo(5U)
+
+            // re-read t9n from database
+            val creditedT9n = alice.findT9n(alice2bob.id)
+            assertThat(creditedT9n.state).isEqualTo(T9n.State.COMPLETED)
+        }
+
+        @Test
+        fun idempotence() {
+            val alice = newUser
+            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+
+            val bob = newUser
+
+            val externalId = T9nExternalId(UUID.randomUUID())
+
+            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+
+            db.debitSender(alice2bob.id)
+            db.creditRecipient(alice2bob.id)
+            // oops, it did it again
+            val result = db.creditRecipient(alice2bob.id)
+
+            assertThat(result).isInstanceOf(Valid::class.java)
+
+            val creditedAccount = bob.settlement()
+            assertThat(creditedAccount.amount).isEqualTo(5U)
+
+            // re-read t9n from database
+            val creditedT9n = alice.findT9n(alice2bob.id)
+            assertThat(creditedT9n.state).isEqualTo(T9n.State.COMPLETED)
+        }
+
+        @Test
+        fun overflow() {
+            val alice = newUser
+            val aliceAccount1 = alice.addAccount(Integer.MAX_VALUE.toUInt())
+            val aliceAccount2 = alice.addAccount(1_U)
+
+            val bob = newUser
+
+            val alice2bob1 = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount1, bob, Integer.MAX_VALUE.toUInt())
+            val d1 = db.debitSender(alice2bob1.id)
+            assertThat(d1).isInstanceOf(Valid::class.java)
+            val c1 = db.creditRecipient(alice2bob1.id)
+            assertThat(c1).isInstanceOf(Valid::class.java)
+
+            val alice2bob2 = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount2, bob, 1_U)
+            val d2 = db.debitSender(alice2bob2.id)
+            assertThat(d2).isInstanceOf(Valid::class.java)
+            val c2 = db.creditRecipient(alice2bob2.id)
+            assertThat(c2).isInstanceOf(Invalid::class.java)
+
+            /**
+             * When overflow happens, we kind of loose money...
+             * actually not, as "lost" money are counted on t9n entity in OVERFLOW state.
+             * This might proceed with auto-refund in case refunds are implemented.
+             * Or left as is for now, considering overflow events too rare.
+             * If these events happen too often, one might need to change amount
+             * from int32 into int64 (long) both in project model and database.
+             */
+            assertThat(bob.settlement().amount).isEqualTo(Integer.MAX_VALUE.toUInt())
+            assertThat(alice.findAccount(aliceAccount1.id).amount).isEqualTo(0U)
+            assertThat(alice.findAccount(aliceAccount2.id).amount).isEqualTo(0U)
+
+            // re-read t9n from database
+            val credited1 = alice.findT9n(alice2bob1.id)
+            assertThat(credited1.state).isEqualTo(T9n.State.COMPLETED)
+            // re-read t9n from database
+            val nonCredited2 = alice.findT9n(alice2bob2.id)
+            assertThat(nonCredited2.state).isEqualTo(T9n.State.OVERFLOW)
         }
 
     }
