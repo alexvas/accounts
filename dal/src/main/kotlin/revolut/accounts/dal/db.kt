@@ -13,6 +13,7 @@ import revolut.accounts.common.Db
 import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode
 import revolut.accounts.common.Invalid
+import revolut.accounts.common.MAX_AMOUNT
 import revolut.accounts.common.OK
 import revolut.accounts.common.T9n
 import revolut.accounts.common.T9nExternalId
@@ -65,7 +66,7 @@ class DbImpl(
             is Valid -> result.value
         }
 
-        require(limit <= Integer.MAX_VALUE.toUInt()) { "limit $limit too large" }
+        require(limit <= MAX_AMOUNT) { "limit $limit too large" }
 
         Valid(
                 selectT9nList {
@@ -94,7 +95,7 @@ class DbImpl(
             is Valid -> result.value
         }
 
-        require(limit <= Integer.MAX_VALUE.toUInt()) { "limit $limit too large" }
+        require(limit <= MAX_AMOUNT) { "limit $limit too large" }
 
         Valid(
                 selectT9nList {
@@ -103,9 +104,11 @@ class DbImpl(
                                     T9NS.FROM_USER.eq(userId.id)
                                             .and(T9NS.TO_USER.ne(userId.id))
                             )
-                            .orderBy(T9NS.FROM_USER, T9NS.CREATED, T9NS.EXTERNAL_ID)
+                            .orderBy(T9NS.TO_USER, T9NS.CREATED, T9NS.EXTERNAL_ID)
                             .also { step ->
-                                lastT9n?.let { last -> step.seek(last.toUser.id, last.created.convert(), last.externalId.id) }
+                                lastT9n?.let { last ->
+                                    step.seek(last.toUser.id, last.created.convert(), last.externalId.id)
+                                }
                             }
                             .limit(limit.toInt())
                 }

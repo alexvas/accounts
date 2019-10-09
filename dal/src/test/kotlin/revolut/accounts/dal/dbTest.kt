@@ -10,6 +10,7 @@ import revolut.accounts.common.Account
 import revolut.accounts.common.AccountId
 import revolut.accounts.common.ErrCode
 import revolut.accounts.common.Invalid
+import revolut.accounts.common.MAX_AMOUNT
 import revolut.accounts.common.T9n
 import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.T9nId
@@ -246,12 +247,12 @@ class DbTest {
         @Test
         fun overflow() {
             val alice = newUser
-            val aliceAccount1 = alice.addAccount(Integer.MAX_VALUE.toUInt())
+            val aliceAccount1 = alice.addAccount(MAX_AMOUNT)
             val aliceAccount2 = alice.addAccount(1_U)
 
             val bob = newUser
 
-            val alice2bob1 = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount1, bob, Integer.MAX_VALUE.toUInt())
+            val alice2bob1 = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount1, bob, MAX_AMOUNT)
             val d1 = db.debitSender(alice2bob1.id)
             assertThat(d1).isInstanceOf(Valid::class.java)
             val c1 = db.creditRecipient(alice2bob1.id)
@@ -271,7 +272,7 @@ class DbTest {
              * If these events happen too often, one might need to change amount
              * from int32 into int64 (long) both in project model and database.
              */
-            assertThat(bob.settlement().amount).isEqualTo(Integer.MAX_VALUE.toUInt())
+            assertThat(bob.settlement().amount).isEqualTo(MAX_AMOUNT)
             assertThat(alice.findAccount(aliceAccount1.id).amount).isEqualTo(0U)
             assertThat(alice.findAccount(aliceAccount2.id).amount).isEqualTo(0U)
 
@@ -285,7 +286,79 @@ class DbTest {
 
     }
 
+    @Nested
+    inner class `t9 lists` {
 
+        @Test
+        fun paging() {
+            val alice = newUser
+            val aliceAccount1 = alice.addAccount(1_000_U)
+            val aliceAccount2 = alice.addAccount(MAX_AMOUNT)
+
+            val bob = newUser
+
+            fun newT9n(amount: UInt) = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount1, bob, amount)
+
+            val start1 = newT9n(10_U)
+            val start2 = newT9n(20_U)
+            val start3 = newT9n(30_U)
+            val start4 = newT9n(40_U)
+            val start5 = newT9n(5_000_U)
+            val start6 = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount2, bob, MAX_AMOUNT)
+
+            db.debitSender(start2.id)
+
+            db.creditRecipient(start3.id)
+
+            db.debitSender(start4.id)
+            db.creditRecipient(start4.id)
+
+            db.debitSender(start5.id)
+
+            db.debitSender(start6.id)
+            db.creditRecipient(start6.id)
+
+            val finish1 = alice.findT9n(start1.id)
+            val finish2 = alice.findT9n(start2.id)
+            val finish3 = alice.findT9n(start3.id)
+            val finish4 = alice.findT9n(start4.id)
+            val finish5 = alice.findT9n(start5.id)
+            val finish6 = alice.findT9n(start6.id)
+
+            assertThat(finish1.state).isEqualTo(T9n.State.INITIATED)
+            assertThat(finish2.state).isEqualTo(T9n.State.DEBITED)
+            assertThat(finish3.state).isEqualTo(T9n.State.INITIATED)
+            assertThat(finish4.state).isEqualTo(T9n.State.COMPLETED)
+            assertThat(finish5.state).isEqualTo(T9n.State.DECLINED)
+            assertThat(finish6.state).isEqualTo(T9n.State.OVERFLOW)
+
+            assertThat(finish1.amount).isEqualTo(10_U)
+            assertThat(finish2.amount).isEqualTo(20_U)
+            assertThat(finish3.amount).isEqualTo(30_U)
+            assertThat(finish4.amount).isEqualTo(40_U)
+            assertThat(finish5.amount).isEqualTo(5_000_U)
+            assertThat(finish6.amount).isEqualTo(MAX_AMOUNT)
+
+            assertThat(alice.outgoing(null, 1_U)).containsExactly(finish1)
+            assertThat(alice.outgoing(finish1.id, 2_U)).containsExactly(finish2, finish3)
+            assertThat(alice.outgoing(finish3.id, 3_U)).containsExactly(finish4, finish5, finish6)
+
+            assertThat(bob.incoming(null, 1_U)).containsExactly(finish1)
+            assertThat(bob.incoming(finish1.id, 2_U)).containsExactly(finish2, finish3)
+            assertThat(bob.incoming(finish3.id, 3_U)).containsExactly(finish4, finish5, finish6)
+        }
+
+        @Test
+        fun `not found`() {
+            val alice = newUser
+            val randomId = T9nId(UUID.randomUUID())
+            val result = db.outgoingTransactions(alice.id, randomId, 2_U)
+            assertThat(result).isInstanceOf(Invalid::class.java)
+            val err = (result as Invalid).err
+            assertThat(err.code).isEqualTo(ErrCode.T9N_NOT_FOUND)
+            assertThat(err.msg).contains(randomId.toString())
+        }
+    }
 }
 
 internal fun createT9nOk(
@@ -320,18 +393,31 @@ internal fun User.findAccount(id: AccountId): Account {
     return filtered[0]
 }
 
+internal fun User.outgoing(last: T9nId?, limit: UInt): List<T9n> {
+    val result = db.outgoingTransactions(this.id, last, limit)
+    assertThat(result).isInstanceOf(Valid::class.java)
+    return (result as Valid).value
+}
+
+internal fun User.incoming(last: T9nId?, limit: UInt): List<T9n> {
+    val result = db.incomingTransactions(this.id, last, limit)
+    assertThat(result).isInstanceOf(Valid::class.java)
+    return (result as Valid).value
+}
+
 internal fun User.findT9n(id: T9nId): T9n {
-    val outResult = db.outgoingTransactions(this.id, null, Integer.MAX_VALUE.toUInt())
+    val outResult = db.outgoingTransactions(this.id, null, MAX_AMOUNT)
     assertThat(outResult).isInstanceOf(Valid::class.java)
     val outT9ns = (outResult as Valid).value
     val outFiltered = outT9ns.filter { it.id == id }
     assertThat(outFiltered).hasSizeLessThanOrEqualTo(1)
     if (outFiltered.size == 1) return outFiltered[0]
 
-    val inResult = db.incomingTransactions(this.id, null, Integer.MAX_VALUE.toUInt())
+    val inResult = db.incomingTransactions(this.id, null, MAX_AMOUNT)
     assertThat(inResult).isInstanceOf(Valid::class.java)
     val inT9ns = (inResult as Valid).value
     val inFiltered = inT9ns.filter { it.id == id }
     assertThat(inFiltered).hasSize(1)
     return inFiltered[0]
 }
+

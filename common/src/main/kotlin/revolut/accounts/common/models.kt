@@ -25,6 +25,8 @@ data class Account(
 inline class T9nId(val id: UUID)
 inline class T9nExternalId(val id: UUID)
 
+val MAX_AMOUNT = Int.MAX_VALUE.toUInt()
+
 data class T9n(
         val id: T9nId,
         val state: State,
@@ -39,7 +41,7 @@ data class T9n(
 ) {
         init {
                 require(amount > 0U) { "t9n amount must be positive" }
-                require(amount <= Integer.MAX_VALUE.toUInt()) { "t9n amount $amount too large" }
+                require(amount <= MAX_AMOUNT) { "t9n amount $amount too large" }
                 require(fromUser != toUser) { "transactions between self account are not allowed yet" }
         }
 

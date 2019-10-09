@@ -18,7 +18,7 @@ import java.time.Instant
  * convert from project's data models into jooq's data models and vice versa
  */
 
-internal fun Instant?.convert(): Timestamp? = this?.epochSecond?.let { Timestamp(it) }
+internal fun Instant?.convert(): Timestamp? = this?.let { Timestamp.from(it) }
 
 internal fun T9nsRecord.convert() = T9n(
         id = T9nId(this.id),

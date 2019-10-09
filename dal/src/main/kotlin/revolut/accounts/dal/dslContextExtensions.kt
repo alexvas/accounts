@@ -5,6 +5,7 @@ import org.jooq.impl.DSL
 import revolut.accounts.common.AccountId
 import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode
+import revolut.accounts.common.MAX_AMOUNT
 import revolut.accounts.common.T9n
 import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.T9nId
@@ -72,7 +73,7 @@ internal fun DSLContext.updateT9nState(t9nId: T9nId, currentState: T9nState, tar
 }
 
 internal fun DSLContext.newAccount(owner: User, settlement: Boolean = false, amount: UInt = 0U): AccountsRecord = newRecord(ACCOUNTS).apply {
-    require(amount <= Integer.MAX_VALUE.toUInt()) {
+    require(amount <= MAX_AMOUNT) {
         "when creating ${if (settlement) "" else "non"}settlement account for user $owner the amount $amount is too large"
     }
     userId = owner.id.id
