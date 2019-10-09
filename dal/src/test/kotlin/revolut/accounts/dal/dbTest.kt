@@ -18,7 +18,6 @@ import revolut.accounts.common.Valid
 import revolut.accounts.common.checkIfAccountBelongsToUser
 import revolut.accounts.common.createOutgoingTransaction
 import revolut.accounts.dal.Deps.db
-import revolut.accounts.dal.Deps.dbInitializer
 import java.time.Instant
 import java.time.temporal.ChronoUnit.SECONDS
 import java.util.*
@@ -28,10 +27,10 @@ class DbTest {
     @Test
     fun `check account belonging`() {
         val alice = newUser
-        val aliceAdditionalAccount = dbInitializer.createAccount(alice, 1_000_U)
+        val aliceAdditionalAccount = alice.addAccount(1_000_U)
 
         val bob = newUser
-        val bobSettlementAccount = settlement(bob)
+        val bobSettlementAccount = bob.settlement()
 
         assertThat(db.checkIfAccountBelongsToUser(aliceAdditionalAccount, alice)).isTrue()
         assertThat(db.checkIfAccountBelongsToUser(aliceAdditionalAccount, bob)).isFalse()
@@ -45,7 +44,7 @@ class DbTest {
         @Test
         fun `T9n created OK`() {
             val alice = newUser
-            val aliceAdditionalAccount = dbInitializer.createAccount(alice, 1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000_U)
 
             val bob = newUser
 
@@ -60,7 +59,7 @@ class DbTest {
                     fromUser = alice.id,
                     toUser = bob.id,
                     fromAccount = aliceAdditionalAccount.id,
-                    toAccount = settlement(bob).id,
+                    toAccount = bob.settlement().id,
                     amount = 5U,
                     created = now,
                     modified = now
@@ -74,7 +73,7 @@ class DbTest {
         @Test
         fun `idempotence of T9n creation`() {
             val alice = newUser
-            val aliceAdditionalAccount = dbInitializer.createAccount(alice, 1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000_U)
 
             val bob = newUser
 
@@ -89,7 +88,7 @@ class DbTest {
         @Test
         fun `failing creation of another t9n with the same externalId`() {
             val alice = newUser
-            val aliceAdditionalAccount = dbInitializer.createAccount(alice, 1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000_U)
 
             val bob = newUser
 
@@ -130,4 +129,4 @@ internal fun settlement(userId: UserId): Account {
     return filtered[0]
 }
 
-internal fun settlement(user: User) = settlement(user.id)
+internal fun User.settlement() = settlement(id)

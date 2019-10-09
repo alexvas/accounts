@@ -10,7 +10,6 @@ import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.Valid
 import revolut.accounts.common.accounts
 import revolut.accounts.dal.Deps.db
-import revolut.accounts.dal.Deps.dbInitializer
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.random.Random
@@ -30,7 +29,7 @@ class DbStressTest {
         val bob = newUser
 
         // at the start both Alice and Bob possess 1M in testerium.
-        dbInitializer.createAccount(alice, 1_000_000_U)
+        alice.addAccount(1_000_000_U)
 
         val aliceAccounts = (db.accounts(alice) as Valid).value
         val bobAccount = (db.accounts(bob) as Valid).value[0]

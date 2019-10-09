@@ -2,6 +2,7 @@ package revolut.accounts.dal
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import revolut.accounts.common.User
 import revolut.accounts.common.UserId
 import revolut.accounts.common.Valid
 import revolut.accounts.common.accounts
@@ -40,7 +41,7 @@ class DbInitializerTest {
     @Test
     fun `create additional account for the user`() {
         val charlie = newUser
-        val charlieAdditinalAccount = dbInitializer.createAccount(charlie, 100U)
+        val charlieAdditinalAccount = charlie.addAccount(100U)
         assertThat(charlieAdditinalAccount.settlement).isFalse()
 
         val accountsResult = db.accounts(charlie)
@@ -57,3 +58,5 @@ class DbInitializerTest {
 
 internal val newUser
     get() = dbInitializer.createUser()
+
+internal fun User.addAccount(amount: UInt) = dbInitializer.createAccount(this, amount)
