@@ -26,8 +26,8 @@ class DbStressTest {
      */
     @Test
     fun `stress-test that we never loose money`() {
-        val alice = dbInitializer.createUser()
-        val bob = dbInitializer.createUser()
+        val alice = newUser
+        val bob = newUser
 
         // at the start both Alice and Bob possess 1M in testerium.
         dbInitializer.createAccount(alice, 1_000_000_U)

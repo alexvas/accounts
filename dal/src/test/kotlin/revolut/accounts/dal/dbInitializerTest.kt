@@ -12,8 +12,8 @@ class DbInitializerTest {
 
     @Test
     fun `users created OK`() {
-        val alice = dbInitializer.createUser()
-        val bob = dbInitializer.createUser()
+        val alice = newUser
+        val bob = newUser
 
         assertThat(alice).isNotNull
                 .isNotEqualTo(bob)
@@ -39,7 +39,7 @@ class DbInitializerTest {
 
     @Test
     fun `create additional account for the user`() {
-        val charlie = dbInitializer.createUser()
+        val charlie = newUser
         val charlieAdditinalAccount = dbInitializer.createAccount(charlie, 100U)
         assertThat(charlieAdditinalAccount.settlement).isFalse()
 
@@ -54,3 +54,6 @@ class DbInitializerTest {
     }
 
 }
+
+internal val newUser
+    get() = dbInitializer.createUser()

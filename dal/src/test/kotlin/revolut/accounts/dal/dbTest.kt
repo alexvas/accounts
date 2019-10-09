@@ -27,10 +27,10 @@ class DbTest {
 
     @Test
     fun `check account belonging`() {
-        val alice = dbInitializer.createUser()
+        val alice = newUser
         val aliceAdditionalAccount = dbInitializer.createAccount(alice, 1_000_U)
 
-        val bob = dbInitializer.createUser()
+        val bob = newUser
         val bobSettlementAccount = settlement(bob)
 
         assertThat(db.checkIfAccountBelongsToUser(aliceAdditionalAccount, alice)).isTrue()
@@ -44,10 +44,10 @@ class DbTest {
 
         @Test
         fun `T9n created OK`() {
-            val alice = dbInitializer.createUser()
+            val alice = newUser
             val aliceAdditionalAccount = dbInitializer.createAccount(alice, 1_000_U)
 
-            val bob = dbInitializer.createUser()
+            val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
@@ -73,10 +73,10 @@ class DbTest {
 
         @Test
         fun `idempotence of T9n creation`() {
-            val alice = dbInitializer.createUser()
+            val alice = newUser
             val aliceAdditionalAccount = dbInitializer.createAccount(alice, 1_000_U)
 
-            val bob = dbInitializer.createUser()
+            val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
@@ -88,10 +88,10 @@ class DbTest {
 
         @Test
         fun `failing creation of another t9n with the same externalId`() {
-            val alice = dbInitializer.createUser()
+            val alice = newUser
             val aliceAdditionalAccount = dbInitializer.createAccount(alice, 1_000_U)
 
-            val bob = dbInitializer.createUser()
+            val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
