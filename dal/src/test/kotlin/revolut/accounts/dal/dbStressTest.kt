@@ -9,7 +9,6 @@ import revolut.accounts.common.T9n
 import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.Valid
 import revolut.accounts.common.accounts
-import revolut.accounts.common.createOutgoingTransaction
 import revolut.accounts.dal.Deps.db
 import revolut.accounts.dal.Deps.dbInitializer
 import java.util.*
@@ -44,11 +43,10 @@ class DbStressTest {
         repeat(10000) {
             val amount = rand.nextInt(1..500_000).toUInt()
             val t9nExternalId = T9nExternalId(UUID.randomUUID())
-            val result = if (rand.nextBoolean())
-                db.createOutgoingTransaction(t9nExternalId, alice, aliceAccounts[rand.nextInt(0..1)], bob, amount)
+            t9ns += if (rand.nextBoolean())
+                createT9nOk(t9nExternalId, alice, aliceAccounts[rand.nextInt(0..1)], bob, amount)
             else
-                db.createOutgoingTransaction(t9nExternalId, bob, bobAccount, alice, amount)
-            t9ns += (result as Valid).value
+                createT9nOk(t9nExternalId, bob, bobAccount, alice, amount)
         }
 
         runBlocking {

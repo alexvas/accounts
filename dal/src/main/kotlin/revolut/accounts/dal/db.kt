@@ -132,8 +132,7 @@ class DbImpl(
     ): Validated<Err, T9n> = tx {
 
         // Read from DB first. Reads are cheap.
-        // todo: uncomment after tests
-//        checkIfT9nsAlreadyExists(externalId, fromUserId, fromAccountId, toUserId, amount)?.let { return@tx it }
+        checkIfT9nsAlreadyExists(externalId, fromUserId, fromAccountId, toUserId, amount)?.let { return@tx it }
 
         val created: T9nsRecord
         try {
