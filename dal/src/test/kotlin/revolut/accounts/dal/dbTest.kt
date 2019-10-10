@@ -460,11 +460,15 @@ internal fun User.outgoing(last: T9nId?, limit: UInt): List<T9n> {
     return (result as Valid).value
 }
 
+internal fun User.outgoing() = outgoing(null, Int.MAX_VALUE.toUInt())
+
 internal fun User.incoming(last: T9nId?, limit: UInt): List<T9n> {
     val result = db.incomingTransactions(this.id, last, limit)
     assertThat(result).isInstanceOf(Valid::class.java)
     return (result as Valid).value
 }
+
+internal fun User.incoming() = incoming(null, Int.MAX_VALUE.toUInt())
 
 internal fun User.findT9n(id: T9nId): T9n {
     val outResult = db.outgoingTransactions(this.id, null, MAX_AMOUNT)
