@@ -127,6 +127,7 @@ class AccountsTest {
         }
 
         assertThat(response.status()).isEqualTo(HttpStatusCode.BadRequest)
+        assertThat(response.content).contains("bad user ID")
     }
 
 

@@ -36,12 +36,12 @@ internal data class UserLocation(
             val userLocation: UserLocation,
             val external: String = "",
             val from_account: String = "",
-            val to_user: String = "",
+            val recipient: String = "",
             val amount: Int = 0
     ) {
         fun externalId() = external.asUuid()?.let { T9nExternalId(it) }
         fun fromAccountId() = from_account.asUuid()?.let { AccountId(it) }
-        fun toUserId() = to_user.asUuid()?.let { UserId(it) }
+        fun recipient() = recipient.asUuid()?.let { UserId(it) }
     }
 }
 

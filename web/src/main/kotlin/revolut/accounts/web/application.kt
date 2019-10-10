@@ -13,7 +13,6 @@ import io.ktor.features.ContentNegotiation
 import io.ktor.features.DefaultHeaders
 import io.ktor.features.StatusPages
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.Forbidden
 import io.ktor.http.HttpStatusCode.Companion.InsufficientStorage
 import io.ktor.http.HttpStatusCode.Companion.InternalServerError
@@ -69,13 +68,6 @@ internal fun Application.module(db: Db, t9nProcessor: T9nProcessor) {
     }
 }
 
-
-// 400
-internal object BadRequest: OutgoingContent.NoContent() {
-    override val status: HttpStatusCode?
-        get() = BadRequest
-}
-
 // 500
 internal object ServerError: OutgoingContent.NoContent() {
     override val status: HttpStatusCode?
@@ -124,3 +116,14 @@ private fun findAnswer(block: () -> Validated<Err, Any>): Pair<HttpStatusCode, A
 private data class ErrorWrapper(
         val error: Err
 )
+
+internal data class BadRequestErr(
+        val msg: String,
+        val code: String = "BAD_REQUEST"
+)
+
+internal data class BadRequestWrapper(
+      val error: BadRequestErr
+)
+
+internal fun badRequest(details: String) = BadRequestWrapper(BadRequestErr(details))

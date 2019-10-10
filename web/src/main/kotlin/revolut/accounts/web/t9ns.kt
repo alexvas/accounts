@@ -1,14 +1,18 @@
 package revolut.accounts.web
 
 import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
 import io.ktor.locations.get
 import io.ktor.locations.put
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import revolut.accounts.common.Db
+import revolut.accounts.common.Invalid
 import revolut.accounts.common.T9nId
 import revolut.accounts.common.T9nProcessor
 import revolut.accounts.common.UserId
+import revolut.accounts.common.Valid
+import revolut.accounts.common.Validated
 import revolut.accounts.web.UserLocation.CreateT9nsLocation
 import revolut.accounts.web.UserLocation.IncomingT9nsLocation
 import revolut.accounts.web.UserLocation.OutgoingT9nsLocation
@@ -17,10 +21,12 @@ import java.util.*
 fun Route.t9ns(db: Db, t9nProcessor: T9nProcessor) {
 
     get<IncomingT9nsLocation> {
-        val refined = refine(it.userLocation.id(), it.last, it.limit)
-        if (refined == null) {
-            call.respond(BadRequest)
-            return@get finish()
+        val refined = when (val res = refine(it.userLocation.id(), it.last, it.limit)) {
+            is Invalid -> {
+                call.respond(HttpStatusCode.BadRequest, badRequest(res.err))
+                return@get finish()
+            }
+            is Valid -> res.value
         }
 
         finalAnswer {
@@ -29,10 +35,12 @@ fun Route.t9ns(db: Db, t9nProcessor: T9nProcessor) {
     }
 
     get<OutgoingT9nsLocation> {
-        val refined = refine(it.userLocation.id(), it.last, it.limit)
-        if (refined == null) {
-            call.respond(BadRequest)
-            return@get finish()
+        val refined = when (val res = refine(it.userLocation.id(), it.last, it.limit)) {
+            is Invalid -> {
+                call.respond(HttpStatusCode.BadRequest, badRequest(res.err))
+                return@get finish()
+            }
+            is Valid -> res.value
         }
 
         finalAnswer {
@@ -44,19 +52,38 @@ fun Route.t9ns(db: Db, t9nProcessor: T9nProcessor) {
      * idempotent transaction creation
      */
     put<CreateT9nsLocation> {
-        val fromUser = it.userLocation.id()
         val external = it.externalId()
+        val fromUser = it.userLocation.id()
         val fromAccount = it.fromAccountId()
-        val toUser = it.toUserId()
+        val recipient = it.recipient()
         val amount = it.amount
 
-        if (fromUser == null || external == null || fromAccount == null || toUser == null || amount <= 0) {
-            call.respond(BadRequest)
+        var err: String? = null
+        if (external == null) {
+            err = "bad external ID"
+        }
+        if (fromUser == null) {
+            err = "bad sender ID"
+        }
+        if (fromAccount == null) {
+            err = "bad from account ID"
+        }
+        if (recipient == null) {
+            err = "bad recipient ID"
+        }
+        if (amount <= 0) {
+            err = "negative amount"
+        }
+
+        if (err != null) {
+            call.respond(HttpStatusCode.BadRequest, badRequest(err))
             return@put finish()
         }
 
+        check(external != null && fromUser != null && fromAccount != null && recipient != null)
+
         finalAnswer {
-            t9nProcessor.makeT9n(external, fromUser, fromAccount, toUser, amount)
+            t9nProcessor.makeT9n(external, fromUser, fromAccount, recipient, amount)
         }
     }
 }
@@ -67,16 +94,19 @@ private data class Refined(
         val limit: Int
 )
 
-private fun refine(user: UserId?, t9n: String, limit: Int): Refined? {
-    if (user == null || limit <= 0) {
-        return null
+private fun refine(user: UserId?, t9n: String, limit: Int): Validated<String, Refined> {
+    if (user == null) {
+        return Invalid("bad user ID")
+    }
+    if (limit <= 0) {
+        return Invalid("non-positive limit")
     }
     val last = if (t9n.isEmpty())
         null
     else try {
         UUID.fromString(t9n)
     } catch (e: IllegalArgumentException) {
-        return null
+        return Invalid("bad last transaction ID")
     }
-    return Refined(user, last?.let { T9nId(it) }, limit)
+    return Valid(Refined(user, last?.let { T9nId(it) }, limit))
 }
