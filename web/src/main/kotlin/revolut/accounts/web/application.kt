@@ -4,6 +4,8 @@ package revolut.accounts.web
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.application.log
 import io.ktor.features.CallLogging
@@ -20,7 +22,9 @@ import io.ktor.http.HttpStatusCode.Companion.PaymentRequired
 import io.ktor.http.content.OutgoingContent
 import io.ktor.jackson.jackson
 import io.ktor.locations.Locations
+import io.ktor.response.respond
 import io.ktor.routing.routing
+import io.ktor.util.pipeline.PipelineContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.slf4j.event.Level
@@ -34,7 +38,12 @@ import revolut.accounts.common.ErrCode.INTERNAL
 import revolut.accounts.common.ErrCode.OTHERS_ACCOUNT
 import revolut.accounts.common.ErrCode.T9N_NOT_FOUND
 import revolut.accounts.common.ErrCode.USER_NOT_FOUND
+import revolut.accounts.common.Invalid
+import revolut.accounts.common.Valid
+import revolut.accounts.common.Validated
 import java.text.DateFormat
+
+typealias Pc = PipelineContext<Unit, ApplicationCall>
 
 internal fun Application.module(db: Db) {
     install(CallLogging) {
@@ -54,6 +63,7 @@ internal fun Application.module(db: Db) {
     routing {
         trace { application.log.debug(it.buildText()) }
         accounts(db)
+        t9ns(db)
     }
 }
 
@@ -74,7 +84,7 @@ internal fun Any.logger(name: String): Logger = LogManager.getLogger(javaClass.`
 
 private val log = object {}.logger("application")
 
-internal fun Err.toResponse(): OutgoingContent {
+private fun Err.toResponse(): OutgoingContent {
     val status: HttpStatusCode = when (code) {
         INTERNAL -> InternalServerError
         USER_NOT_FOUND, ACCOUNT_NOT_FOUND, T9N_NOT_FOUND -> NotFound
@@ -83,13 +93,34 @@ internal fun Err.toResponse(): OutgoingContent {
         FUNDS_OVERFLOW -> InsufficientStorage
     }
 
-    when(code) {
-        INTERNAL -> log.error("internal error: {}", msg)
-        else -> log.info("request failed with code {}: {}", code, msg)
-    }
-
     return object: OutgoingContent.NoContent() {
         override val status: HttpStatusCode?
             get() = status
+    }
+}
+
+internal suspend fun Pc.finalAnswer(block: () -> Validated<Err, Any>) {
+    call.respond(findAnswer(block))
+    finish()
+}
+
+private fun findAnswer(block: () -> Validated<Err, Any>): Any {
+    val result = try {
+        block.invoke()
+    } catch (t: Throwable) {
+        log.error("unexpected error", t)
+        return ServerError
+    }
+
+    return when(result) {
+        is Invalid -> {
+            val err = result.err
+            when(err.code) {
+                INTERNAL -> log.error("internal error: {}", err.msg)
+                else -> log.info("request failed with code {}: {}", err.code, err.msg)
+            }
+            err.toResponse()
+        }
+        is Valid -> result.value
     }
 }

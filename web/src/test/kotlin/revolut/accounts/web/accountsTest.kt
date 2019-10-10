@@ -1,9 +1,15 @@
 package revolut.accounts.web
 
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonNull
+import com.google.gson.JsonPrimitive
+import com.google.gson.JsonSerializationContext
+import com.google.gson.JsonSerializer
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpStatusCode
+import io.ktor.locations.locations
+import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.TestApplicationResponse
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
@@ -14,6 +20,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import revolut.accounts.common.Account
 import revolut.accounts.common.AccountId
@@ -23,6 +30,10 @@ import revolut.accounts.common.ErrCode
 import revolut.accounts.common.Invalid
 import revolut.accounts.common.UserId
 import revolut.accounts.common.Valid
+import revolut.accounts.web.UserLocation.AccountsLocation
+import java.lang.reflect.Type
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class AccountsTest {
@@ -41,7 +52,8 @@ class AccountsTest {
 
     private val db: Db = mockk()
 
-    init {
+    @BeforeAll
+    fun beforeAll() {
         every {
             db.accounts(UserId(any()))
         } answers {
@@ -61,7 +73,7 @@ class AccountsTest {
     @Test
     fun alice() {
         val response = withTestApplication({ this.module(db) }) {
-            handleRequest(Get, "/${alice.id}/accounts").response
+            handleRequest(Get, uri(alice)).response
         }
 
         assertContentOk(response, aliceAccounts)
@@ -76,7 +88,7 @@ class AccountsTest {
     @Test
     fun bob() {
         val response = withTestApplication({ this.module(db) }) {
-            handleRequest(Get, "/${bob.id}/accounts").response
+            handleRequest(Get, uri(bob)).response
         }
 
         assertContentOk(response, bobAccounts)
@@ -94,7 +106,7 @@ class AccountsTest {
         val unknown = newUserId()
 
         val response = withTestApplication({ this.module(db) }) {
-            handleRequest(Get, "/${unknown.id}/accounts").response
+            handleRequest(Get, uri(unknown)).response
         }
 
         assertThat(response.status()).isEqualTo(HttpStatusCode.NotFound)
@@ -110,7 +122,7 @@ class AccountsTest {
     fun gibberish() {
 
         val response = withTestApplication({ this.module(mockk()) }) {
-            handleRequest(Get, "/AaAbBbCcC/accounts").response
+            handleRequest(Get, uri("AaAbBbCcC")).response
         }
 
         assertThat(response.status()).isEqualTo(HttpStatusCode.BadRequest)
@@ -119,22 +131,39 @@ class AccountsTest {
 
 }
 
-private fun assertContentOk(response: TestApplicationResponse, expected: Any) {
+private class InstantSerializer : JsonSerializer<Instant> {
+    override fun serialize(src: Instant?, typeOfSrc: Type?, context: JsonSerializationContext?) =
+            if (src == null)
+                JsonNull.INSTANCE
+            else
+                JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(src))
+}
+
+private val gson = GsonBuilder()
+        .setPrettyPrinting()
+        .registerTypeAdapter(Instant::class.java, InstantSerializer())
+        .create()
+
+internal fun assertContentOk(response: TestApplicationResponse, expected: Any) {
     assertThat(response.status()).isEqualTo(HttpStatusCode.OK)
 
     val contentType = response.headers["Content-Type"]
     assertThat(contentType).isNotNull()
     assertThat(ContentType.Application.Json.match(contentType!!))
 
-    assertThat(response.content).isEqualToIgnoringWhitespace(Gson().toJson(expected))
+    assertThat(response.content).isEqualToIgnoringWhitespace(gson.toJson(expected))
 }
 
 
-private fun newUserId() = UserId(UUID.randomUUID())
+internal fun newUserId() = UserId(UUID.randomUUID())
 
-private fun UserId.newAccount(amount: Int, settlement: Boolean = true) = Account(
+internal fun UserId.newAccount(amount: Int, settlement: Boolean = true) = Account(
         id = AccountId(UUID.randomUUID()),
         userId = this,
         amount = amount,
         settlement = settlement
 )
+
+private fun TestApplicationEngine.uri(userId: UserId): String = uri(userId.id.toString())
+
+private fun TestApplicationEngine.uri(userId: String): String = application.locations.href(AccountsLocation(UserLocation(userId)))
