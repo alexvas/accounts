@@ -28,7 +28,7 @@ internal class HikariConnectionProvider(
 }
 
 // ragged-DI
-internal object Deps {
+object Deps {
     val db: Db
     val dbInitializer: DbInitializer
 
@@ -39,7 +39,7 @@ internal object Deps {
         embeddedPostgres.postgresDatabase.connection.use { conn ->
             liqDb.connection = JdbcConnection(conn)
             Liquibase(
-                    "src/main/liquibase/changelog.xml",
+                    "../dal/src/main/liquibase/changelog.xml",
                     FileSystemResourceAccessor(),
                     liqDb
             ).update(Contexts())

@@ -46,7 +46,7 @@ import java.text.DateFormat
 
 typealias Pc = PipelineContext<Unit, ApplicationCall>
 
-internal fun Application.module(db: Db, t9nProcessor: T9nProcessor) {
+fun Application.module(db: Db, t9nProcessor: T9nProcessor) {
     install(CallLogging) {
         level = Level.DEBUG
     }

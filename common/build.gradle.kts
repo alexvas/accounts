@@ -14,7 +14,6 @@ repositories {
 dependencies {
     implementation(Libs.kotlin_stdlib_jdk8)
     implementation(Libs.kotlinx_coroutines_core)
-    implementation(Libs.atomicfu)
 
     implementation(Libs.log4j_api)
 

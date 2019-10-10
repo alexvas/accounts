@@ -46,7 +46,9 @@ dependencies {
 
     // since we are running in-memory db
     implementation(Libs.otj_pg_embedded)
-    implementation(Libs.liquibase_core)
+    implementation(Libs.liquibase_core){
+        exclude(group = "ch.qos.logback")
+    }
 
     // jOOQ Open Source Edition
     implementation(Libs.jooq)
@@ -94,12 +96,13 @@ jooq {
     }
 }
 
-val liquibaseMainFiles = fileTree("src/main/liquibase") { include("**/*.xml", "**/*.sql") }
+val liquibaseDir: File = project(":dal").projectDir.resolve("src/main/liquibase").canonicalFile
+val liquibaseMainFiles = fileTree(liquibaseDir) { include("**/*.xml", "**/*.sql") }
 
 liquibase {
     activities.register("main") {
         this.arguments = mapOf(
-                "classpath" to liquibaseMainFiles.dir,
+                "classpath" to liquibaseDir,
                 "logLevel" to "info",
                 "changeLogFile" to "changelog.xml",
                 "url" to "no url" // configure later before task start
