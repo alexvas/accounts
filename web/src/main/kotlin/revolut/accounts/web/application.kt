@@ -18,6 +18,7 @@ import io.ktor.http.HttpStatusCode.Companion.Forbidden
 import io.ktor.http.HttpStatusCode.Companion.InsufficientStorage
 import io.ktor.http.HttpStatusCode.Companion.InternalServerError
 import io.ktor.http.HttpStatusCode.Companion.NotFound
+import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.http.HttpStatusCode.Companion.PaymentRequired
 import io.ktor.http.content.OutgoingContent
 import io.ktor.jackson.jackson
@@ -85,32 +86,26 @@ internal fun Any.logger(name: String): Logger = LogManager.getLogger(javaClass.`
 
 private val log = object {}.logger("application")
 
-private fun Err.toResponse(): OutgoingContent {
-    val status: HttpStatusCode = when (code) {
-        INTERNAL -> InternalServerError
-        USER_NOT_FOUND, ACCOUNT_NOT_FOUND, T9N_NOT_FOUND -> NotFound
-        OTHERS_ACCOUNT, ENTITY_ALREADY_EXISTS -> Forbidden
-        INSUFFICIENT_FUNDS -> PaymentRequired
-        FUNDS_OVERFLOW -> InsufficientStorage
-    }
-
-    return object: OutgoingContent.NoContent() {
-        override val status: HttpStatusCode?
-            get() = status
-    }
+private fun Err.httpStatusCode() = when (code) {
+    INTERNAL -> InternalServerError
+    USER_NOT_FOUND, ACCOUNT_NOT_FOUND, T9N_NOT_FOUND -> NotFound
+    OTHERS_ACCOUNT, ENTITY_ALREADY_EXISTS -> Forbidden
+    INSUFFICIENT_FUNDS -> PaymentRequired
+    FUNDS_OVERFLOW -> InsufficientStorage
 }
 
 internal suspend fun Pc.finalAnswer(block: () -> Validated<Err, Any>) {
-    call.respond(findAnswer(block))
+    val (code, answer) = findAnswer(block)
+    call.respond(code, answer)
     finish()
 }
 
-private fun findAnswer(block: () -> Validated<Err, Any>): Any {
+private fun findAnswer(block: () -> Validated<Err, Any>): Pair<HttpStatusCode, Any> {
     val result = try {
         block.invoke()
     } catch (t: Throwable) {
         log.error("unexpected error", t)
-        return ServerError
+        return InternalServerError to ServerError
     }
 
     return when(result) {
@@ -120,8 +115,12 @@ private fun findAnswer(block: () -> Validated<Err, Any>): Any {
                 INTERNAL -> log.error("internal error: {}", err.msg)
                 else -> log.info("request failed with code {}: {}", err.code, err.msg)
             }
-            err.toResponse()
+            err.httpStatusCode() to ErrorWrapper(err)
         }
-        is Valid -> result.value
+        is Valid -> OK to result.value
     }
 }
+
+private data class ErrorWrapper(
+        val error: Err
+)

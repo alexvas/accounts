@@ -110,6 +110,7 @@ class AccountsTest {
         }
 
         assertThat(response.status()).isEqualTo(HttpStatusCode.NotFound)
+        assertThat(response.content).contains("\"msg\" : \"User ").contains(" not found\"")
 
         verify {
             db.accounts(unknown)
