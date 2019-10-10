@@ -3,6 +3,7 @@
 package revolut.accounts.web
 
 import io.ktor.http.HttpMethod.Companion.Get
+import io.ktor.http.HttpMethod.Companion.Put
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.locations
 import io.ktor.server.testing.TestApplicationEngine
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import revolut.accounts.common.Account
+import revolut.accounts.common.AccountId
 import revolut.accounts.common.Db
 import revolut.accounts.common.T9n
 import revolut.accounts.common.T9n.State.COMPLETED
@@ -28,8 +30,10 @@ import revolut.accounts.common.T9n.State.INITIATED
 import revolut.accounts.common.T9n.State.OVERFLOW
 import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.T9nId
+import revolut.accounts.common.T9nProcessor
 import revolut.accounts.common.UserId
 import revolut.accounts.common.Valid
+import revolut.accounts.web.UserLocation.CreateT9nsLocation
 import revolut.accounts.web.UserLocation.IncomingT9nsLocation
 import revolut.accounts.web.UserLocation.OutgoingT9nsLocation
 import java.time.Instant.now
@@ -64,6 +68,7 @@ class T9nTest {
     )
 
     private val db: Db = mockk()
+    private val t9nProcessor: T9nProcessor = mockk()
 
     @BeforeAll
     fun beforeAll() {
@@ -80,6 +85,12 @@ class T9nTest {
         } answers {
             Valid(outgoing)
         }
+
+        every {
+            t9nProcessor.makeT9n(T9nExternalId(any()), UserId(any()), AccountId(any()), UserId(any()), any())
+        } answers {
+            Valid(incoming[0])
+        }
     }
 
     @AfterEach
@@ -93,12 +104,12 @@ class T9nTest {
 
         @Test
         fun ok() {
-            val response = withTestApplication({ this.module(db) }) {
+            val response = withTestApplication({ this.module(db, mockk()) }) {
                 handleRequest(Get, incomingUri(alice, null, 10)).response
             }
             assertContentOk(response, incoming)
 
-            val response2 = withTestApplication({ this.module(db) }) {
+            val response2 = withTestApplication({ this.module(db, mockk()) }) {
                 handleRequest(Get, incomingUri(alice, incoming[0].id, 20)).response
             }
             assertContentOk(response2, incoming)
@@ -114,7 +125,7 @@ class T9nTest {
         @Test
         fun gibberishUser() {
 
-            val response = withTestApplication({ this.module(mockk()) }) {
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
                 handleRequest(Get, incomingUri("junk", null, 37)).response
             }
 
@@ -124,7 +135,7 @@ class T9nTest {
         @Test
         fun gibberishT9n() {
 
-            val response = withTestApplication({ this.module(mockk()) }) {
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
                 handleRequest(Get, incomingUri(alice.id.toString(), "gibberish", 37)).response
             }
 
@@ -134,7 +145,7 @@ class T9nTest {
         @Test
         fun nonPositiveLimit() {
 
-            val response = withTestApplication({ this.module(mockk()) }) {
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
                 handleRequest(Get, incomingUri(alice, null, 0)).response
             }
 
@@ -148,12 +159,12 @@ class T9nTest {
 
         @Test
         fun ok() {
-            val response = withTestApplication({ this.module(db) }) {
+            val response = withTestApplication({ this.module(db, mockk()) }) {
                 handleRequest(Get, outgoingUri(alice, null, 10)).response
             }
             assertContentOk(response, outgoing)
 
-            val response2 = withTestApplication({ this.module(db) }) {
+            val response2 = withTestApplication({ this.module(db, mockk()) }) {
                 handleRequest(Get, outgoingUri(alice, outgoing[0].id, 20)).response
             }
             assertContentOk(response2, outgoing)
@@ -169,7 +180,7 @@ class T9nTest {
         @Test
         fun gibberishUser() {
 
-            val response = withTestApplication({ this.module(mockk()) }) {
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
                 handleRequest(Get, outgoingUri("junk", null, 37)).response
             }
 
@@ -179,7 +190,7 @@ class T9nTest {
         @Test
         fun gibberishT9n() {
 
-            val response = withTestApplication({ this.module(mockk()) }) {
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
                 handleRequest(Get, outgoingUri(alice.id.toString(), "gibberish", 37)).response
             }
 
@@ -189,7 +200,7 @@ class T9nTest {
         @Test
         fun nonPositiveLimit() {
 
-            val response = withTestApplication({ this.module(mockk()) }) {
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
                 handleRequest(Get, outgoingUri(alice, null, 0)).response
             }
 
@@ -198,6 +209,142 @@ class T9nTest {
 
     }
 
+
+    @Nested
+    inner class `Creation of transactions` {
+
+        @Test
+        fun ok() {
+            val sample = incoming[0]
+
+            val response = withTestApplication({ this.module(mockk(), t9nProcessor) }) {
+                handleRequest(
+                        Put,
+                        createUri(
+                                sample.externalId.id.toString(),
+                                sample.fromUser.id.toString(),
+                                sample.fromAccount.id.toString(),
+                                sample.toUser.id.toString(),
+                                sample.amount
+                        )
+                ).response
+            }
+            assertContentOk(response, sample)
+
+            verify {
+                t9nProcessor.makeT9n(
+                        sample.externalId, sample.fromUser, sample.fromAccount, sample.toUser, sample.amount
+                )
+            }
+
+            confirmVerified(t9nProcessor)
+        }
+
+
+        @Test
+        fun `bad external id`() {
+            val sample = incoming[0]
+
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
+                handleRequest(
+                        Put,
+                        createUri(
+                                "baaad",
+                                sample.fromUser.id.toString(),
+                                sample.fromAccount.id.toString(),
+                                sample.toUser.id.toString(),
+                                sample.amount
+                        )
+                ).response
+            }
+
+            assertThat(response.status()).isEqualTo(HttpStatusCode.BadRequest)
+
+        }
+
+        @Test
+        fun `bad sender`() {
+            val sample = incoming[0]
+
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
+                handleRequest(
+                        Put,
+                        createUri(
+                                sample.externalId.id.toString(),
+                                "baaad",
+                                sample.fromAccount.id.toString(),
+                                sample.toUser.id.toString(),
+                                sample.amount
+                        )
+                ).response
+            }
+
+            assertThat(response.status()).isEqualTo(HttpStatusCode.BadRequest)
+
+        }
+
+        @Test
+        fun `bad sender's account`() {
+            val sample = incoming[0]
+
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
+                handleRequest(
+                        Put,
+                        createUri(
+                                sample.externalId.id.toString(),
+                                sample.fromUser.id.toString(),
+                                "baaad",
+                                sample.toUser.id.toString(),
+                                sample.amount
+                        )
+                ).response
+            }
+
+            assertThat(response.status()).isEqualTo(HttpStatusCode.BadRequest)
+
+        }
+
+        @Test
+        fun `bad recipient`() {
+            val sample = incoming[0]
+
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
+                handleRequest(
+                        Put,
+                        createUri(
+                                sample.externalId.id.toString(),
+                                sample.fromUser.id.toString(),
+                                sample.fromAccount.id.toString(),
+                                "baaad",
+                                sample.amount
+                        )
+                ).response
+            }
+
+            assertThat(response.status()).isEqualTo(HttpStatusCode.BadRequest)
+
+        }
+
+        @Test
+        fun `zero amount`() {
+            val sample = incoming[0]
+
+            val response = withTestApplication({ this.module(mockk(), mockk()) }) {
+                handleRequest(
+                        Put,
+                        createUri(
+                                sample.externalId.id.toString(),
+                                sample.fromUser.id.toString(),
+                                sample.fromAccount.id.toString(),
+                                sample.toUser.id.toString(),
+                                0
+                        )
+                ).response
+            }
+
+            assertThat(response.status()).isEqualTo(HttpStatusCode.BadRequest)
+        }
+    }
 
 }
 
@@ -234,5 +381,15 @@ private fun TestApplicationEngine.outgoingUri(userId: String, t9nId: String?, li
                 UserLocation(userId),
                 t9nId ?: "",
                 limit
+        )
+)
+
+private fun TestApplicationEngine.createUri(external: String?, fromUser: String, fromAccount: String?, toUser: String?, amount: Int): String = application.locations.href(
+        CreateT9nsLocation(
+                UserLocation(fromUser),
+                external ?: "",
+                fromAccount ?: "",
+                toUser ?: "",
+                amount
         )
 )

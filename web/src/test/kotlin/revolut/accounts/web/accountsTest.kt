@@ -72,7 +72,7 @@ class AccountsTest {
 
     @Test
     fun alice() {
-        val response = withTestApplication({ this.module(db) }) {
+        val response = withTestApplication({ this.module(db, mockk()) }) {
             handleRequest(Get, uri(alice)).response
         }
 
@@ -87,7 +87,7 @@ class AccountsTest {
 
     @Test
     fun bob() {
-        val response = withTestApplication({ this.module(db) }) {
+        val response = withTestApplication({ this.module(db, mockk()) }) {
             handleRequest(Get, uri(bob)).response
         }
 
@@ -105,7 +105,7 @@ class AccountsTest {
 
         val unknown = newUserId()
 
-        val response = withTestApplication({ this.module(db) }) {
+        val response = withTestApplication({ this.module(db, mockk()) }) {
             handleRequest(Get, uri(unknown)).response
         }
 
@@ -121,7 +121,7 @@ class AccountsTest {
     @Test
     fun gibberish() {
 
-        val response = withTestApplication({ this.module(mockk()) }) {
+        val response = withTestApplication({ this.module(mockk(), mockk()) }) {
             handleRequest(Get, uri("AaAbBbCcC")).response
         }
 

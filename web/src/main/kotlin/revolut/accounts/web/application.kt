@@ -39,13 +39,14 @@ import revolut.accounts.common.ErrCode.OTHERS_ACCOUNT
 import revolut.accounts.common.ErrCode.T9N_NOT_FOUND
 import revolut.accounts.common.ErrCode.USER_NOT_FOUND
 import revolut.accounts.common.Invalid
+import revolut.accounts.common.T9nProcessor
 import revolut.accounts.common.Valid
 import revolut.accounts.common.Validated
 import java.text.DateFormat
 
 typealias Pc = PipelineContext<Unit, ApplicationCall>
 
-internal fun Application.module(db: Db) {
+internal fun Application.module(db: Db, t9nProcessor: T9nProcessor) {
     install(CallLogging) {
         level = Level.DEBUG
     }
@@ -63,7 +64,7 @@ internal fun Application.module(db: Db) {
     routing {
         trace { application.log.debug(it.buildText()) }
         accounts(db)
-        t9ns(db)
+        t9ns(db, t9nProcessor)
     }
 }
 

@@ -159,7 +159,7 @@ interface DbInitializer {
 /**
  * Business logic sits here
  */
-interface T9nProcessor {
+interface T9nProcessor : CoroutineScope  {
 
     /**
      * periodically check for stale transactions
@@ -172,7 +172,7 @@ interface T9nProcessor {
      *
      * see Db.createOutgoingTransaction for parameter description
      */
-    fun CoroutineScope.makeT9n(
+    fun makeT9n(
             externalId: T9nExternalId,
             fromUserId: UserId,
             fromAccountId: AccountId,

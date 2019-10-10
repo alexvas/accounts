@@ -1,6 +1,8 @@
 package revolut.accounts.web
 
 import io.ktor.locations.Location
+import revolut.accounts.common.AccountId
+import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.UserId
 import java.util.*
 
@@ -29,9 +31,24 @@ internal data class UserLocation(
             val last: String = "",
             val limit: Int = DEFAULT_PAGE_SIZE
     )
-
+    @Location("transactions/create")
+    internal data class CreateT9nsLocation(
+            val userLocation: UserLocation,
+            val external: String = "",
+            val from_account: String = "",
+            val to_user: String = "",
+            val amount: Int = 0
+    ) {
+        fun externalId() = external.asUuid()?.let { T9nExternalId(it) }
+        fun fromAccountId() = from_account.asUuid()?.let { AccountId(it) }
+        fun toUserId() = to_user.asUuid()?.let { UserId(it) }
+    }
 }
 
+/**
+ * In Kotlin one is able to use null as a kind of "soft error". Here it is:
+ * returning UUID when input is OK or null otherwise
+ */
 private fun String.asUuid(): UUID? {
     return if (isEmpty())
         null

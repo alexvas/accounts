@@ -1,7 +1,6 @@
 package revolut.accounts.core
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.apache.logging.log4j.LogManager
@@ -19,14 +18,17 @@ import revolut.accounts.common.Valid
 import revolut.accounts.common.Validated
 import java.time.Duration
 import java.time.temporal.ChronoUnit
+import kotlin.coroutines.CoroutineContext
 
 private val durationToBecomeStale: Duration = Duration.of(10, ChronoUnit.SECONDS)
 private const val MAX_BATCH_SIZE = 100
 
 class T9nProcessorImpl(private val db: Db) : T9nProcessor {
+    override val coroutineContext: CoroutineContext
+        get() = Job()
 
     override fun setupStaleChecks() {
-        GlobalScope.launch {
+        launch {
             while (true) {
                 delay(durationToBecomeStale.toMillis())
                 staleCheck()
@@ -43,7 +45,7 @@ class T9nProcessorImpl(private val db: Db) : T9nProcessor {
         }
     }
 
-    override fun CoroutineScope.makeT9n(
+    override fun makeT9n(
             externalId: T9nExternalId,
             fromUserId: UserId,
             fromAccountId: AccountId,
