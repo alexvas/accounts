@@ -111,8 +111,14 @@ interface Db {
      */
     fun creditRecipient(t9nId: T9nId): Validated<Err, OK>
 
+    /**
+     * find stale transaction is INITIATED state
+     */
     fun staleInitiated(durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n>
 
+    /**
+     * find stale transaction is DEBITED state
+     */
     fun staleDebited(durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n>
 
 }
