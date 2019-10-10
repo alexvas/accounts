@@ -41,7 +41,7 @@ class DbInitializerTest {
     @Test
     fun `create additional account for the user`() {
         val charlie = newUser
-        val charlieAdditinalAccount = charlie.addAccount(100U)
+        val charlieAdditinalAccount = charlie.addAccount(100)
         assertThat(charlieAdditinalAccount.settlement).isFalse()
 
         val accountsResult = db.accounts(charlie)
@@ -59,4 +59,4 @@ class DbInitializerTest {
 internal val newUser
     get() = dbInitializer.createUser()
 
-internal fun User.addAccount(amount: UInt) = dbInitializer.createAccount(this, amount)
+internal fun User.addAccount(amount: Int) = dbInitializer.createAccount(this, amount)

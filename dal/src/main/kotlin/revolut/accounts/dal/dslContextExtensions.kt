@@ -5,7 +5,6 @@ import org.jooq.impl.DSL
 import revolut.accounts.common.AccountId
 import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode
-import revolut.accounts.common.MAX_AMOUNT
 import revolut.accounts.common.T9n
 import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.T9nId
@@ -30,7 +29,7 @@ internal fun DSLContext.findT9n(t9nId: T9nId?): Validated<Err, T9n?> = Valid(
                 ?.convert()
 )
 
-internal fun DSLContext.insertT9n(externalId: T9nExternalId, fromUserId: UserId, fromAccountId: AccountId, toUserId: UserId, amount: UInt) =
+internal fun DSLContext.insertT9n(externalId: T9nExternalId, fromUserId: UserId, fromAccountId: AccountId, toUserId: UserId, amount: Int) =
         insertInto(
                 T9NS,
                 T9NS.EXTERNAL_ID,
@@ -47,7 +46,7 @@ internal fun DSLContext.insertT9n(externalId: T9nExternalId, fromUserId: UserId,
                                 DSL.inline(fromAccountId.id),
                                 DSL.inline(toUserId.id),
                                 ACCOUNTS.ID,
-                                DSL.inline(amount.toInt())
+                                DSL.inline(amount)
                         )
                                 .from(ACCOUNTS)
                                 .where(ACCOUNTS.USER_ID.eq(toUserId.id).and(ACCOUNTS.SETTLEMENT))
@@ -72,12 +71,12 @@ internal fun DSLContext.updateT9nState(t9nId: T9nId, currentState: T9nState, tar
             .execute()
 }
 
-internal fun DSLContext.newAccount(owner: User, settlement: Boolean = false, amount: UInt = 0U): AccountsRecord = newRecord(ACCOUNTS).apply {
-    require(amount <= MAX_AMOUNT) {
-        "when creating ${if (settlement) "" else "non"}settlement account for user $owner the amount $amount is too large"
+internal fun DSLContext.newAccount(owner: User, settlement: Boolean = false, amount: Int = 0): AccountsRecord = newRecord(ACCOUNTS).apply {
+    require(amount >= 0) {
+        "when creating ${if (settlement) "" else "non"}settlement account for user $owner the amount $amount must be positive"
     }
     userId = owner.id.id
     this.settlement = settlement
-    this.amount = amount.toInt()
+    this.amount = amount
     store()
 }

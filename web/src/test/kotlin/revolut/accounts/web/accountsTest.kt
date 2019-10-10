@@ -31,12 +31,12 @@ class AccountsTest {
     private val bob = newUserId()
 
     private val aliceAccounts = listOf(
-            alice.newAccount(1_000_U),
-            alice.newAccount(2_000_U, false)
+            alice.newAccount(1_000),
+            alice.newAccount(2_000, false)
     )
 
     private val bobAccounts = listOf(
-            bob.newAccount(3_000_U)
+            bob.newAccount(3_000)
     )
 
     private val db: Db = mockk()
@@ -132,7 +132,7 @@ private fun assertContentOk(response: TestApplicationResponse, expected: Any) {
 
 private fun newUserId() = UserId(UUID.randomUUID())
 
-private fun UserId.newAccount(amount: UInt, settlement: Boolean = true) = Account(
+private fun UserId.newAccount(amount: Int, settlement: Boolean = true) = Account(
         id = AccountId(UUID.randomUUID()),
         userId = this,
         amount = amount,

@@ -161,10 +161,10 @@ tasks {
 
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
-    freeCompilerArgs = listOf("-XXLanguage:+InlineClasses", "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
+    freeCompilerArgs = listOf("-XXLanguage:+InlineClasses")
 }
 
 val compileTestKotlin: KotlinCompile by tasks
 compileTestKotlin.kotlinOptions {
-    freeCompilerArgs = listOf("-XXLanguage:+InlineClasses", "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
+    freeCompilerArgs = listOf("-XXLanguage:+InlineClasses")
 }

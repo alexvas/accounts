@@ -48,7 +48,7 @@ interface Db {
      * @param lastT9nId -- previous page boundary. If set, return list following transactions
      * @param limit -- haw many result needed
      */
-    fun incomingTransactions(userId: UserId, lastT9nId: T9nId?, limit: UInt): Validated<Err, List<T9n>>
+    fun incomingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<Err, List<T9n>>
 
     /**
      * What takes my money away?
@@ -58,7 +58,7 @@ interface Db {
      * @param lastT9nId -- previous page boundary. If set, return list following transactions
      * @param limit -- haw many result needed
      */
-    fun outgoingTransactions(userId: UserId, lastT9nId: T9nId?, limit: UInt): Validated<Err, List<T9n>>
+    fun outgoingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<Err, List<T9n>>
 
     /* to be implemented in the next phase:
      * How I manage my money?
@@ -67,7 +67,7 @@ interface Db {
      * @param userId -- owner of transactions
      * @param lastT9nId -- previous page boundary. If set, return list following transactions
      * @param limit -- haw many result needed
-       fun selfTransactions(userId: UserId, lastT9nId: T9nId?, limit: UInt)
+       fun selfTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int)
      */
 
     fun checkIfAccountBelongsToUser(accountId: AccountId, userId: UserId): Boolean
@@ -88,7 +88,7 @@ interface Db {
             fromUserId: UserId,
             fromAccountId: AccountId,
             toUserId: UserId,
-            amount: UInt
+            amount: Int
     ): Validated<Err, T9n>
 
     /**
@@ -114,12 +114,12 @@ interface Db {
     /**
      * find stale transaction is INITIATED state
      */
-    fun staleInitiated(durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n>
+    fun staleInitiated(durationToBecomeStale: Duration, maxBatchSize: Int): List<T9n>
 
     /**
      * find stale transaction is DEBITED state
      */
-    fun staleDebited(durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n>
+    fun staleDebited(durationToBecomeStale: Duration, maxBatchSize: Int): List<T9n>
 
 }
 
@@ -130,7 +130,7 @@ fun Db.createOutgoingTransaction(
         fromUser: User,
         fromAccount: Account,
         toUser: User,
-        amount: UInt
+        amount: Int
 ) = createOutgoingTransaction(externalId, fromUser.id, fromAccount.id, toUser.id, amount)
 
 fun Db.checkIfAccountBelongsToUser(account: Account, user: User) = checkIfAccountBelongsToUser(account.id, user.id)
@@ -153,7 +153,7 @@ interface DbInitializer {
     /**
      * create a (non-settlement) account for given user
      */
-    fun createAccount(user: User, amount: UInt): Account
+    fun createAccount(user: User, amount: Int): Account
 }
 
 /**
@@ -177,7 +177,7 @@ interface T9nProcessor {
             fromUserId: UserId,
             fromAccountId: AccountId,
             toUserId: UserId,
-            amount: UInt
+            amount: Int
     ): Validated<Err, T9n>
 
 }

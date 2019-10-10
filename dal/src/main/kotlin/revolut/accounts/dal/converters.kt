@@ -33,7 +33,7 @@ internal fun T9nsRecord.convert() = T9n(
         toUser = UserId(this.toUser),
         fromAccount = AccountId(this.fromAccount),
         toAccount = AccountId(this.toAccount),
-        amount = this.amount.toUInt(),
+        amount = this.amount,
         created = this.created.toInstant(),
         modified = this.modified.toInstant()
 )
@@ -57,7 +57,7 @@ internal fun T9n.State.convert(): T9nState = when (this) {
 internal fun AccountsRecord.convert() = Account(
         id = AccountId(this.id),
         userId = UserId(this.userId),
-        amount = this.amount.toUInt(),
+        amount = this.amount,
         settlement = this.settlement
 )
 

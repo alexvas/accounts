@@ -12,7 +12,6 @@ import revolut.accounts.common.Account
 import revolut.accounts.common.AccountId
 import revolut.accounts.common.ErrCode
 import revolut.accounts.common.Invalid
-import revolut.accounts.common.MAX_AMOUNT
 import revolut.accounts.common.T9n
 import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.T9nId
@@ -28,12 +27,14 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit.SECONDS
 import java.util.*
 
+private const val MAX_AMOUNT = Int.MAX_VALUE
+
 class DbTest {
 
     @Test
     fun `check account belonging`() {
         val alice = newUser
-        val aliceAdditionalAccount = alice.addAccount(1_000_U)
+        val aliceAdditionalAccount = alice.addAccount(1_000)
 
         val bob = newUser
         val bobSettlementAccount = bob.settlement()
@@ -50,13 +51,13 @@ class DbTest {
         @Test
         fun `T9n created OK`() {
             val alice = newUser
-            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000)
 
             val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
-            val created = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+            val created = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5)
             val now = Instant.now()
             val expected = T9n(
                     id = T9nId(UUID.randomUUID()),
@@ -66,7 +67,7 @@ class DbTest {
                     toUser = bob.id,
                     fromAccount = aliceAdditionalAccount.id,
                     toAccount = bob.settlement().id,
-                    amount = 5U,
+                    amount = 5,
                     created = now,
                     modified = now
             )
@@ -79,14 +80,14 @@ class DbTest {
         @Test
         fun `idempotence of T9n creation`() {
             val alice = newUser
-            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000)
 
             val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
-            val created = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
-            val created2 = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+            val created = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5)
+            val created2 = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5)
 
             assertThat(created).isEqualTo(created2)
         }
@@ -94,16 +95,16 @@ class DbTest {
         @Test
         fun `failing creation of another t9n with the same externalId`() {
             val alice = newUser
-            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000)
 
             val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
-            createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+            createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5)
 
             // amount has been changed!
-            val created2 = db.createOutgoingTransaction(externalId, alice, aliceAdditionalAccount, bob, 6U)
+            val created2 = db.createOutgoingTransaction(externalId, alice, aliceAdditionalAccount, bob, 6)
 
             assertThat(created2).isInstanceOf(Invalid::class.java)
             val err = (created2 as Invalid).err
@@ -119,13 +120,13 @@ class DbTest {
         @Test
         fun ok() {
             val alice = newUser
-            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000)
 
             val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
-            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5)
 
             val result = db.debitSender(alice2bob.id)
             assertThat(result).isInstanceOf(Valid::class.java)
@@ -134,7 +135,7 @@ class DbTest {
 
             // re-read account from database
             val debitedAccount = alice.findAccount(aliceAdditionalAccount.id)
-            assertThat(debitedAccount.amount).isEqualTo(1_000_U - 5U)
+            assertThat(debitedAccount.amount).isEqualTo(1_000 - 5)
 
             // re-read t9n from database
             val debitedT9n = alice.findT9n(alice2bob.id)
@@ -144,13 +145,13 @@ class DbTest {
         @Test
         fun idempotence() {
             val alice = newUser
-            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000)
 
             val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
-            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5)
 
             db.debitSender(alice2bob.id)
             // oops, it did it again
@@ -161,7 +162,7 @@ class DbTest {
 
             // re-read account from database
             val debitedAccount = alice.findAccount(aliceAdditionalAccount.id)
-            assertThat(debitedAccount.amount).isEqualTo(1_000_U - 5U)
+            assertThat(debitedAccount.amount).isEqualTo(1_000 - 5)
 
             // re-read t9n from database
             val debitedT9n = alice.findT9n(alice2bob.id)
@@ -171,13 +172,13 @@ class DbTest {
         @Test
         fun `insufficient funds`() {
             val alice = newUser
-            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000)
 
             val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
-            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 1_001_U)
+            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 1_001)
 
             val result = db.debitSender(alice2bob.id)
             assertThat(result).isInstanceOf(Invalid::class.java)
@@ -186,7 +187,7 @@ class DbTest {
 
             // re-read account from database
             val debitedAccount = alice.findAccount(aliceAdditionalAccount.id)
-            assertThat(debitedAccount.amount).isEqualTo(1_000_U)
+            assertThat(debitedAccount.amount).isEqualTo(1_000)
 
             // re-read t9n from database
             val debitedT9n = alice.findT9n(alice2bob.id)
@@ -201,13 +202,13 @@ class DbTest {
         @Test
         fun ok() {
             val alice = newUser
-            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000)
 
             val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
-            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5)
 
             db.debitSender(alice2bob.id)
             val result = db.creditRecipient(alice2bob.id)
@@ -215,7 +216,7 @@ class DbTest {
             assertThat(result).isInstanceOf(Valid::class.java)
 
             val creditedAccount = bob.settlement()
-            assertThat(creditedAccount.amount).isEqualTo(5U)
+            assertThat(creditedAccount.amount).isEqualTo(5)
 
             // re-read t9n from database
             val creditedT9n = alice.findT9n(alice2bob.id)
@@ -225,13 +226,13 @@ class DbTest {
         @Test
         fun idempotence() {
             val alice = newUser
-            val aliceAdditionalAccount = alice.addAccount(1_000_U)
+            val aliceAdditionalAccount = alice.addAccount(1_000)
 
             val bob = newUser
 
             val externalId = T9nExternalId(UUID.randomUUID())
 
-            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5U)
+            val alice2bob = createT9nOk(externalId, alice, aliceAdditionalAccount, bob, 5)
 
             db.debitSender(alice2bob.id)
             db.creditRecipient(alice2bob.id)
@@ -241,7 +242,7 @@ class DbTest {
             assertThat(result).isInstanceOf(Valid::class.java)
 
             val creditedAccount = bob.settlement()
-            assertThat(creditedAccount.amount).isEqualTo(5U)
+            assertThat(creditedAccount.amount).isEqualTo(5)
 
             // re-read t9n from database
             val creditedT9n = alice.findT9n(alice2bob.id)
@@ -252,7 +253,7 @@ class DbTest {
         fun overflow() {
             val alice = newUser
             val aliceAccount1 = alice.addAccount(MAX_AMOUNT)
-            val aliceAccount2 = alice.addAccount(1_U)
+            val aliceAccount2 = alice.addAccount(1)
 
             val bob = newUser
 
@@ -262,7 +263,7 @@ class DbTest {
             val c1 = db.creditRecipient(alice2bob1.id)
             assertThat(c1).isInstanceOf(Valid::class.java)
 
-            val alice2bob2 = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount2, bob, 1_U)
+            val alice2bob2 = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount2, bob, 1)
             val d2 = db.debitSender(alice2bob2.id)
             assertThat(d2).isInstanceOf(Valid::class.java)
             val c2 = db.creditRecipient(alice2bob2.id)
@@ -277,8 +278,8 @@ class DbTest {
              * from int32 into int64 (long) both in project model and database.
              */
             assertThat(bob.settlement().amount).isEqualTo(MAX_AMOUNT)
-            assertThat(alice.findAccount(aliceAccount1.id).amount).isEqualTo(0U)
-            assertThat(alice.findAccount(aliceAccount2.id).amount).isEqualTo(0U)
+            assertThat(alice.findAccount(aliceAccount1.id).amount).isZero()
+            assertThat(alice.findAccount(aliceAccount2.id).amount).isZero()
 
             // re-read t9n from database
             val credited1 = alice.findT9n(alice2bob1.id)
@@ -296,18 +297,18 @@ class DbTest {
         @Test
         fun paging() {
             val alice = newUser
-            val aliceAccount1 = alice.addAccount(1_000_U)
+            val aliceAccount1 = alice.addAccount(1_000)
             val aliceAccount2 = alice.addAccount(MAX_AMOUNT)
 
             val bob = newUser
 
-            fun newT9n(amount: UInt) = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount1, bob, amount)
+            fun newT9n(amount: Int) = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount1, bob, amount)
 
-            val start1 = newT9n(10_U)
-            val start2 = newT9n(20_U)
-            val start3 = newT9n(30_U)
-            val start4 = newT9n(40_U)
-            val start5 = newT9n(5_000_U)
+            val start1 = newT9n(10)
+            val start2 = newT9n(20)
+            val start3 = newT9n(30)
+            val start4 = newT9n(40)
+            val start5 = newT9n(5_000)
             val start6 = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount2, bob, MAX_AMOUNT)
 
             db.debitSender(start2.id)
@@ -336,27 +337,27 @@ class DbTest {
             assertThat(finish5.state).isEqualTo(T9n.State.DECLINED)
             assertThat(finish6.state).isEqualTo(T9n.State.OVERFLOW)
 
-            assertThat(finish1.amount).isEqualTo(10_U)
-            assertThat(finish2.amount).isEqualTo(20_U)
-            assertThat(finish3.amount).isEqualTo(30_U)
-            assertThat(finish4.amount).isEqualTo(40_U)
-            assertThat(finish5.amount).isEqualTo(5_000_U)
+            assertThat(finish1.amount).isEqualTo(10)
+            assertThat(finish2.amount).isEqualTo(20)
+            assertThat(finish3.amount).isEqualTo(30)
+            assertThat(finish4.amount).isEqualTo(40)
+            assertThat(finish5.amount).isEqualTo(5_000)
             assertThat(finish6.amount).isEqualTo(MAX_AMOUNT)
 
-            assertThat(alice.outgoing(null, 1_U)).containsExactly(finish1)
-            assertThat(alice.outgoing(finish1.id, 2_U)).containsExactly(finish2, finish3)
-            assertThat(alice.outgoing(finish3.id, 3_U)).containsExactly(finish4, finish5, finish6)
+            assertThat(alice.outgoing(null, 1)).containsExactly(finish1)
+            assertThat(alice.outgoing(finish1.id, 2)).containsExactly(finish2, finish3)
+            assertThat(alice.outgoing(finish3.id, 3)).containsExactly(finish4, finish5, finish6)
 
-            assertThat(bob.incoming(null, 1_U)).containsExactly(finish1)
-            assertThat(bob.incoming(finish1.id, 2_U)).containsExactly(finish2, finish3)
-            assertThat(bob.incoming(finish3.id, 3_U)).containsExactly(finish4, finish5, finish6)
+            assertThat(bob.incoming(null, 1)).containsExactly(finish1)
+            assertThat(bob.incoming(finish1.id, 2)).containsExactly(finish2, finish3)
+            assertThat(bob.incoming(finish3.id, 3)).containsExactly(finish4, finish5, finish6)
         }
 
         @Test
         fun `not found`() {
             val alice = newUser
             val randomId = T9nId(UUID.randomUUID())
-            val result = db.outgoingTransactions(alice.id, randomId, 2_U)
+            val result = db.outgoingTransactions(alice.id, randomId, 2)
             assertThat(result).isInstanceOf(Invalid::class.java)
             val err = (result as Invalid).err
             assertThat(err.code).isEqualTo(ErrCode.T9N_NOT_FOUND)
@@ -367,15 +368,15 @@ class DbTest {
     @Test
     fun`stale transaction handling`() {
         val alice = newUser
-        val aliceAccount = alice.addAccount(1000_U)
+        val aliceAccount = alice.addAccount(1000)
 
         val bob = newUser
 
-        fun newT9n(amount: UInt) = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount, bob, amount)
+        fun newT9n(amount: Int) = createT9nOk(T9nExternalId(UUID.randomUUID()), alice, aliceAccount, bob, amount)
 
-        val start1 = newT9n(10_U)
-        val start2 = newT9n(20_U)
-        val start3 = newT9n(30_U)
+        val start1 = newT9n(10)
+        val start2 = newT9n(20)
+        val start3 = newT9n(30)
 
         db.debitSender(start1.id)
         db.creditRecipient(start1.id)
@@ -387,9 +388,9 @@ class DbTest {
 
         runBlocking { delay(timeMillis = 100) }
 
-        val start4 = newT9n(40_U)
-        val start5 = newT9n(50_U)
-        val start6 = newT9n(60_U)
+        val start4 = newT9n(40)
+        val start5 = newT9n(50)
+        val start6 = newT9n(60)
 
         db.debitSender(start4.id)
         db.creditRecipient(start4.id)
@@ -417,8 +418,8 @@ class DbTest {
         assertThat(finish5.modified).isAfter(staleMoment)
         assertThat(start6.modified).isAfter(staleMoment)
 
-        assertThat(db.staleInitiated(staleDuration, 100500_U)).containsExactly(start3)
-        assertThat(db.staleDebited(staleDuration, 100500_U)).containsExactly(finish2)
+        assertThat(db.staleInitiated(staleDuration, 100500)).containsExactly(start3)
+        assertThat(db.staleDebited(staleDuration, 100500)).containsExactly(finish2)
     }
 }
 
@@ -427,7 +428,7 @@ internal fun createT9nOk(
         fromUser: User,
         fromAccount: Account,
         toUser: User,
-        amount: UInt
+        amount: Int
 ): T9n {
     val result = db.createOutgoingTransaction(externalId, fromUser, fromAccount, toUser, amount)
     assertThat(result).isInstanceOf(Valid::class.java)
@@ -454,21 +455,21 @@ internal fun User.findAccount(id: AccountId): Account {
     return filtered[0]
 }
 
-internal fun User.outgoing(last: T9nId?, limit: UInt): List<T9n> {
+internal fun User.outgoing(last: T9nId?, limit: Int): List<T9n> {
     val result = db.outgoingTransactions(this.id, last, limit)
     assertThat(result).isInstanceOf(Valid::class.java)
     return (result as Valid).value
 }
 
-internal fun User.outgoing() = outgoing(null, Int.MAX_VALUE.toUInt())
+internal fun User.outgoing() = outgoing(null, Int.MAX_VALUE)
 
-internal fun User.incoming(last: T9nId?, limit: UInt): List<T9n> {
+internal fun User.incoming(last: T9nId?, limit: Int): List<T9n> {
     val result = db.incomingTransactions(this.id, last, limit)
     assertThat(result).isInstanceOf(Valid::class.java)
     return (result as Valid).value
 }
 
-internal fun User.incoming() = incoming(null, Int.MAX_VALUE.toUInt())
+internal fun User.incoming() = incoming(null, Int.MAX_VALUE)
 
 internal fun User.findT9n(id: T9nId): T9n {
     val outResult = db.outgoingTransactions(this.id, null, MAX_AMOUNT)

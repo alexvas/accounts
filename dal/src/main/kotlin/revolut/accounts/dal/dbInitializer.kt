@@ -25,7 +25,7 @@ class DbInitializerImpl(
         user
     }
 
-    override fun createAccount(user: User, amount: UInt): Account = tx {
+    override fun createAccount(user: User, amount: Int): Account = tx {
         log.trace("creating account for user $user")
 
         newAccount(user, amount = amount).convert()

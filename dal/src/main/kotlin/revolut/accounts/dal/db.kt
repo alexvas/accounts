@@ -13,7 +13,6 @@ import revolut.accounts.common.Db
 import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode
 import revolut.accounts.common.Invalid
-import revolut.accounts.common.MAX_AMOUNT
 import revolut.accounts.common.OK
 import revolut.accounts.common.T9n
 import revolut.accounts.common.T9nExternalId
@@ -39,7 +38,6 @@ typealias SelectT9nsQuery = (SelectWhereStep<T9nsRecord>) -> ResultQuery<T9nsRec
 
 // https://www.postgresql.org/docs/current/errcodes-appendix.html
 private const val UNIQUE_VIOLATION = "23505"
-private const val CHECK_VIOLATION = "23514"
 
 class DbImpl(
         private val connectionProvider: ConnectionProvider
@@ -57,7 +55,7 @@ class DbImpl(
         )
     }
 
-    override fun incomingTransactions(userId: UserId, lastT9nId: T9nId?, limit: UInt): Validated<Err, List<T9n>> = tx {
+    override fun incomingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<Err, List<T9n>> = tx {
         log.trace("incoming transactions for userId = {}, with lastT9nId = {}, limit = {}", userId, lastT9nId, limit)
 
         if (!userExists(userId))
@@ -68,7 +66,7 @@ class DbImpl(
             is Valid -> result.value
         }
 
-        require(limit <= MAX_AMOUNT) { "limit $limit too large" }
+        require(limit > 0) { "limit $limit must be positive" }
 
         Valid(
                 selectT9nList {
@@ -81,12 +79,12 @@ class DbImpl(
                             .also { step ->
                                 lastT9n?.let { last -> step.seek(last.fromUser.id, last.created.convert(), last.externalId.id) }
                             }
-                            .limit(limit.toInt())
+                            .limit(limit)
                 }
         )
     }
 
-    override fun outgoingTransactions(userId: UserId, lastT9nId: T9nId?, limit: UInt): Validated<Err, List<T9n>> = tx {
+    override fun outgoingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<Err, List<T9n>> = tx {
         log.trace("outgoing transactions for userId = {}, with lastT9nId = {}, limit = {}", userId, lastT9nId, limit)
 
         if (!userExists(userId))
@@ -97,7 +95,7 @@ class DbImpl(
             is Valid -> result.value
         }
 
-        require(limit <= MAX_AMOUNT) { "limit $limit too large" }
+        require(limit > 0) { "limit $limit must be positive" }
 
         Valid(
                 selectT9nList {
@@ -112,7 +110,7 @@ class DbImpl(
                                     step.seek(last.toUser.id, last.created.convert(), last.externalId.id)
                                 }
                             }
-                            .limit(limit.toInt())
+                            .limit(limit)
                 }
         )
     }
@@ -133,7 +131,7 @@ class DbImpl(
             fromUserId: UserId,
             fromAccountId: AccountId,
             toUserId: UserId,
-            amount: UInt
+            amount: Int
     ): Validated<Err, T9n> = tx {
 
         // Read from DB first. Reads are cheap.
@@ -260,24 +258,24 @@ class DbImpl(
         ok
     }
 
-    override fun staleInitiated(durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n> {
+    override fun staleInitiated(durationToBecomeStale: Duration, maxBatchSize: Int): List<T9n> {
         log.trace("stale initiated transactions for duration = {}, with maximum batch size = {}", durationToBecomeStale, maxBatchSize)
         return stale(T9n.State.INITIATED, durationToBecomeStale, maxBatchSize)
     }
 
-    override fun staleDebited(durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n> {
+    override fun staleDebited(durationToBecomeStale: Duration, maxBatchSize: Int): List<T9n> {
         log.trace("stale debited transactions for duration = {}, with maximum batch size = {}", durationToBecomeStale, maxBatchSize)
         return stale(T9n.State.DEBITED, durationToBecomeStale, maxBatchSize)
     }
 
-    private fun stale(state: T9n.State, durationToBecomeStale: Duration, maxBatchSize: UInt): List<T9n> = tx {
+    private fun stale(state: T9n.State, durationToBecomeStale: Duration, maxBatchSize: Int): List<T9n> = tx {
         return@tx selectT9nList {
             it
                     .where(
                             T9NS.STATE.eq(state.convert())
                                     .and(T9NS.MODIFIED.le(Instant.now().minus(durationToBecomeStale).convert()))
                     )
-                    .limit(maxBatchSize.toInt())
+                    .limit(maxBatchSize)
         }
     }
 
@@ -308,7 +306,7 @@ class DbImpl(
      * if the entity already stored in database with the same external ID would have different
      * parameters than one going to be stored.
      */
-    private fun checkIfT9nsAlreadyExists(externalId: T9nExternalId, fromUserId: UserId, fromAccountId: AccountId, toUserId: UserId, amount: UInt) =
+    private fun checkIfT9nsAlreadyExists(externalId: T9nExternalId, fromUserId: UserId, fromAccountId: AccountId, toUserId: UserId, amount: Int) =
             selectT9n {
                 it.where(T9NS.EXTERNAL_ID.eq(externalId.id))
             }

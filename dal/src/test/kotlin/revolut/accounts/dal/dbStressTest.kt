@@ -35,7 +35,7 @@ class DbStressTest {
         val alice = newUser
         val aliceAccount1 = alice.settlement()
         // at the start both Alice and Bob possess 1M in testerium.
-        val aliceAccount2 = alice.addAccount(1_000_000_U)
+        val aliceAccount2 = alice.addAccount(1_000_000)
 
         val bob = newUser
         val bobAccount = bob.settlement()
@@ -46,7 +46,7 @@ class DbStressTest {
         val rand = Random.Default
 
         repeat(NO_OF_ITERATIONS) {
-            val amount = rand.nextInt(1..500_000).toUInt()
+            val amount = rand.nextInt(1..500_000)
             val t9nExternalId = T9nExternalId(UUID.randomUUID())
             t9ns += if (rand.nextBoolean())
                 createT9nOk(
@@ -79,14 +79,14 @@ class DbStressTest {
         val alice2 = alice.findAccount(aliceAccount2.id).amount
         val bob1 = bob.settlement().amount
 
-        assertThat(alice1 + alice2 + bob1).isEqualTo(1_000_000_U).`as`("Never loose money")
+        assertThat(alice1 + alice2 + bob1).isEqualTo(1_000_000).`as`("Never loose money")
 
         // this is a probabilistic assumption:
         // in the result of random money transfers
         // it distributes between all three accounts
-        assertThat(alice2).isGreaterThan(0U).`as`("The assert might fail when number of iterations is really high.")
-        assertThat(alice1).isGreaterThan(0U).`as`("The assert might fail when number of iterations is low.")
-        assertThat(bob1).isGreaterThan(0U).`as`("The assert might fail, yet it is very improbable.")
+        assertThat(alice2).isGreaterThan(0).`as`("The assert might fail when number of iterations is really high.")
+        assertThat(alice1).isGreaterThan(0).`as`("The assert might fail when number of iterations is low.")
+        assertThat(bob1).isGreaterThan(0).`as`("The assert might fail, yet it is very improbable.")
 
         val allT9ns = alice.outgoing() + alice.incoming()
         val states = allT9ns.asSequence().map { it.state }.toSet()

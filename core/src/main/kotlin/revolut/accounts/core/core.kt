@@ -21,7 +21,7 @@ import java.time.Duration
 import java.time.temporal.ChronoUnit
 
 private val durationToBecomeStale: Duration = Duration.of(10, ChronoUnit.SECONDS)
-private const val MAX_BATCH_SIZE = 100_U
+private const val MAX_BATCH_SIZE = 100
 
 class T9nProcessorImpl(private val db: Db) : T9nProcessor {
 
@@ -48,7 +48,7 @@ class T9nProcessorImpl(private val db: Db) : T9nProcessor {
             fromUserId: UserId,
             fromAccountId: AccountId,
             toUserId: UserId,
-            amount: UInt
+            amount: Int
 
     ): Validated<Err, T9n> {
         if (!db.checkIfAccountBelongsToUser(fromAccountId, fromUserId))

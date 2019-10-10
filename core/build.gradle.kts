@@ -22,5 +22,5 @@ dependencies {
 
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
-    freeCompilerArgs = listOf("-XXLanguage:+InlineClasses", "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes")
+    freeCompilerArgs = listOf("-XXLanguage:+InlineClasses")
 }
