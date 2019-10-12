@@ -1,3 +1,5 @@
+@file:Suppress("DataClassPrivateConstructor")
+
 package revolut.accounts.common
 
 import kotlinx.coroutines.CoroutineScope
@@ -6,10 +8,13 @@ import java.time.Duration
 /**
  * The way to live in a world without checked exceptions
  */
-sealed class Validated<out E, out R>
+sealed class Validated<out R>
 
-data class Invalid<E>(val err: E) : Validated<E, Nothing>()
-data class Valid<R>(val value: R) : Validated<Nothing, R>()
+data class Invalid private constructor(val err: Err) : Validated<Nothing>() {
+    constructor(code: ErrCode, msg: String = "") : this(Err(code, msg))
+}
+
+data class Valid<R>(val value: R) : Validated<R>()
 
 object OK
 
@@ -24,6 +29,8 @@ enum class ErrCode {
     INSUFFICIENT_FUNDS,    // not enough money to perform requested transaction
     FUNDS_OVERFLOW,        // too much money on receiver's account
     ENTITY_ALREADY_EXISTS, // different entity with the same external ID already exists
+
+    BAD_REQUEST
 }
 
 data class Err(
@@ -37,7 +44,7 @@ interface Db {
      * What my accounts are?
      * returns all user's accounts
      */
-    fun accounts(userId: UserId): Validated<Err, List<Account>>
+    fun accounts(userId: UserId): Validated<List<Account>>
 
     /**
      * What brings me money?
@@ -48,7 +55,7 @@ interface Db {
      * @param lastT9nId -- previous page boundary. If set, return list following transactions
      * @param limit -- haw many result needed
      */
-    fun incomingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<Err, List<T9n>>
+    fun incomingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<List<T9n>>
 
     /**
      * What takes my money away?
@@ -58,7 +65,7 @@ interface Db {
      * @param lastT9nId -- previous page boundary. If set, return list following transactions
      * @param limit -- haw many result needed
      */
-    fun outgoingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<Err, List<T9n>>
+    fun outgoingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<List<T9n>>
 
     /* to be implemented in the next phase:
      * How I manage my money?
@@ -89,7 +96,7 @@ interface Db {
             fromAccountId: AccountId,
             toUserId: UserId,
             amount: Int
-    ): Validated<Err, T9n>
+    ): Validated<T9n>
 
     /**
      * atomically both debit sender and
@@ -103,13 +110,13 @@ interface Db {
      * in the case t9n already left INITIATED state, no debit is needed,
      * the operation will return false
      */
-    fun debitSender(t9nId: T9nId): Validated<Err, Boolean>
+    fun debitSender(t9nId: T9nId): Validated<Boolean>
 
     /**
      * atomically both credit recipient and
      * change transaction state DEBITED => COMPLETED
      */
-    fun creditRecipient(t9nId: T9nId): Validated<Err, OK>
+    fun creditRecipient(t9nId: T9nId): Validated<OK>
 
     /**
      * find stale transaction is INITIATED state
@@ -178,6 +185,6 @@ interface T9nProcessor : CoroutineScope  {
             fromAccountId: AccountId,
             toUserId: UserId,
             amount: Int
-    ): Validated<Err, T9n>
+    ): Validated<T9n>
 
 }

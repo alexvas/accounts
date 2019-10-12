@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test
 import revolut.accounts.common.Account
 import revolut.accounts.common.AccountId
 import revolut.accounts.common.Db
-import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode
 import revolut.accounts.common.Invalid
 import revolut.accounts.common.UserId
@@ -60,7 +59,7 @@ class AccountsTest {
             when (val uuid: UUID = firstArg()) {
                 alice.id -> Valid(aliceAccounts)
                 bob.id -> Valid(bobAccounts)
-                else -> Invalid(Err(ErrCode.USER_NOT_FOUND, "User $uuid not found"))
+                else -> Invalid(ErrCode.USER_NOT_FOUND, "User $uuid not found")
             }
         }
     }

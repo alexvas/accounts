@@ -6,6 +6,8 @@ import io.ktor.locations.get
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import revolut.accounts.common.Db
+import revolut.accounts.common.Err
+import revolut.accounts.common.ErrCode
 import revolut.accounts.web.UserLocation.AccountsLocation
 
 fun Route.accounts(db: Db) {
@@ -13,7 +15,7 @@ fun Route.accounts(db: Db) {
     get<AccountsLocation> {
         val userId = it.userLocation.id()
         if (userId == null) {
-            call.respond(BadRequest, badRequest("bad user ID"))
+            call.respond(BadRequest, badRequest(Err(ErrCode.BAD_REQUEST, "bad user ID")))
             return@get finish()
         }
 

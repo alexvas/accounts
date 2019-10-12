@@ -13,6 +13,7 @@ import io.ktor.features.ContentNegotiation
 import io.ktor.features.DefaultHeaders
 import io.ktor.features.StatusPages
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.Forbidden
 import io.ktor.http.HttpStatusCode.Companion.InsufficientStorage
 import io.ktor.http.HttpStatusCode.Companion.InternalServerError
@@ -31,6 +32,7 @@ import org.slf4j.event.Level
 import revolut.accounts.common.Db
 import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode.ACCOUNT_NOT_FOUND
+import revolut.accounts.common.ErrCode.BAD_REQUEST
 import revolut.accounts.common.ErrCode.ENTITY_ALREADY_EXISTS
 import revolut.accounts.common.ErrCode.FUNDS_OVERFLOW
 import revolut.accounts.common.ErrCode.INSUFFICIENT_FUNDS
@@ -84,15 +86,16 @@ private fun Err.httpStatusCode() = when (code) {
     OTHERS_ACCOUNT, ENTITY_ALREADY_EXISTS -> Forbidden
     INSUFFICIENT_FUNDS -> PaymentRequired
     FUNDS_OVERFLOW -> InsufficientStorage
+    BAD_REQUEST -> BadRequest
 }
 
-internal suspend fun Pc.finalAnswer(block: () -> Validated<Err, Any>) {
+internal suspend fun Pc.finalAnswer(block: () -> Validated<Any>) {
     val (code, answer) = findAnswer(block)
     call.respond(code, answer)
     finish()
 }
 
-private fun findAnswer(block: () -> Validated<Err, Any>): Pair<HttpStatusCode, Any> {
+private fun findAnswer(block: () -> Validated<Any>): Pair<HttpStatusCode, Any> {
     val result = try {
         block.invoke()
     } catch (t: Throwable) {
@@ -113,17 +116,8 @@ private fun findAnswer(block: () -> Validated<Err, Any>): Pair<HttpStatusCode, A
     }
 }
 
-private data class ErrorWrapper(
+internal data class ErrorWrapper(
         val error: Err
 )
 
-internal data class BadRequestErr(
-        val msg: String,
-        val code: String = "BAD_REQUEST"
-)
-
-internal data class BadRequestWrapper(
-      val error: BadRequestErr
-)
-
-internal fun badRequest(details: String) = BadRequestWrapper(BadRequestErr(details))
+internal fun badRequest(err: Err) = ErrorWrapper(err)

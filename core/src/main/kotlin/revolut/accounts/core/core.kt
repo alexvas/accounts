@@ -7,7 +7,6 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import revolut.accounts.common.AccountId
 import revolut.accounts.common.Db
-import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode
 import revolut.accounts.common.Invalid
 import revolut.accounts.common.T9n
@@ -52,9 +51,9 @@ class T9nProcessorImpl(private val db: Db) : T9nProcessor {
             toUserId: UserId,
             amount: Int
 
-    ): Validated<Err, T9n> {
+    ): Validated<T9n> {
         if (!db.checkIfAccountBelongsToUser(fromAccountId, fromUserId))
-            return Invalid(Err(ErrCode.OTHERS_ACCOUNT, "account ID $fromAccountId does not belong to the user with ID $fromUserId"))
+            return Invalid(ErrCode.OTHERS_ACCOUNT, "account ID $fromAccountId does not belong to the user with ID $fromUserId")
 
         val t9n = when (
             val result = db.createOutgoingTransaction(

@@ -10,7 +10,6 @@ import org.jooq.exception.DataAccessException
 import revolut.accounts.common.Account
 import revolut.accounts.common.AccountId
 import revolut.accounts.common.Db
-import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode
 import revolut.accounts.common.Invalid
 import revolut.accounts.common.OK
@@ -42,11 +41,11 @@ private const val UNIQUE_VIOLATION = "23505"
 class DbImpl(
         private val connectionProvider: ConnectionProvider
 ) : Db {
-    override fun accounts(userId: UserId): Validated<Err, List<Account>> = tx {
+    override fun accounts(userId: UserId): Validated<List<Account>> = tx {
         log.trace("user's {} accounts", userId)
 
         if (!userExists(userId))
-            return@tx invalid(ErrCode.USER_NOT_FOUND, "User $userId not found")
+            return@tx Invalid(ErrCode.USER_NOT_FOUND, "User $userId not found")
 
         Valid(
                 selectAccountList {
@@ -55,11 +54,11 @@ class DbImpl(
         )
     }
 
-    override fun incomingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<Err, List<T9n>> = tx {
+    override fun incomingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<List<T9n>> = tx {
         log.trace("incoming transactions for userId = {}, with lastT9nId = {}, limit = {}", userId, lastT9nId, limit)
 
         if (!userExists(userId))
-            return@tx invalid(ErrCode.USER_NOT_FOUND, "User $userId not found")
+            return@tx Invalid(ErrCode.USER_NOT_FOUND, "User $userId not found")
 
         val lastT9n = when (val result = findT9n(lastT9nId)) {
             is Invalid -> return@tx result
@@ -84,11 +83,11 @@ class DbImpl(
         )
     }
 
-    override fun outgoingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<Err, List<T9n>> = tx {
+    override fun outgoingTransactions(userId: UserId, lastT9nId: T9nId?, limit: Int): Validated<List<T9n>> = tx {
         log.trace("outgoing transactions for userId = {}, with lastT9nId = {}, limit = {}", userId, lastT9nId, limit)
 
         if (!userExists(userId))
-            return@tx invalid(ErrCode.USER_NOT_FOUND, "User $userId not found")
+            return@tx Invalid(ErrCode.USER_NOT_FOUND, "User $userId not found")
 
         val lastT9n = when (val result = findT9n(lastT9nId)) {
             is Invalid -> return@tx result
@@ -132,7 +131,7 @@ class DbImpl(
             fromAccountId: AccountId,
             toUserId: UserId,
             amount: Int
-    ): Validated<Err, T9n> = tx {
+    ): Validated<T9n> = tx {
 
         // Read from DB first. Reads are cheap.
         checkIfT9nsAlreadyExists(externalId, fromUserId, fromAccountId, toUserId, amount)?.let { return@tx it }
@@ -162,7 +161,7 @@ class DbImpl(
      * This way we prevent possible deadlocks when concurrent mutual transfers are running at the same moment,
      * e.g. from Alice to Bob _and_ from Bob to Alice.
      */
-    override fun debitSender(t9nId: T9nId): Validated<Err, Boolean> = tx {
+    override fun debitSender(t9nId: T9nId): Validated<Boolean> = tx {
         log.trace("debit sender t9nId={}", t9nId)
 
         // Here is independent query to fetch data from t9n. It is possible to convert it into a subquery of next update
@@ -206,7 +205,7 @@ class DbImpl(
             if (!updateT9nState(t9nId, INITIATED, DECLINED))
                 log.error("wrong number of t9ns updated to declined for {}", t9nId)
 
-            return@tx invalid(ErrCode.INSUFFICIENT_FUNDS, "not enough money to make transaction $t9nId of amount $amount from account $fromAccountId")
+            return@tx Invalid(ErrCode.INSUFFICIENT_FUNDS, "not enough money to make transaction $t9nId of amount $amount from account $fromAccountId")
         }
 
         if (!updateT9nState(t9nId, INITIATED, DEBITED))
@@ -218,7 +217,7 @@ class DbImpl(
     /**
      * The second half of a money transfer processing also uses only one update per table.
      */
-    override fun creditRecipient(t9nId: T9nId): Validated<Err, OK> = tx {
+    override fun creditRecipient(t9nId: T9nId): Validated<OK> = tx {
         log.trace("credit recipient t9nId={}", t9nId)
 
         val result = select(T9NS.TO_ACCOUNT, T9NS.AMOUNT)
@@ -249,7 +248,7 @@ class DbImpl(
             if (!updateT9nState(t9nId, DEBITED, OVERFLOW))
                 log.error("wrong number of t9ns updated to overflow for {}", t9nId)
 
-            return@tx invalid(ErrCode.FUNDS_OVERFLOW, "to much money on recipient's account to make transaction $t9nId of amount $amount to account $toAccountId")
+            return@tx Invalid(ErrCode.FUNDS_OVERFLOW, "to much money on recipient's account to make transaction $t9nId of amount $amount to account $toAccountId")
         }
 
         if (!updateT9nState(t9nId, DEBITED, COMPLETED))
@@ -320,11 +319,9 @@ class DbImpl(
                         )
                             Valid(it)
                         else
-                            invalid(ErrCode.ENTITY_ALREADY_EXISTS, "different entity $it exists for input $externalId, $fromUserId, $fromAccountId, $toUserId, $amount")
+                            Invalid(ErrCode.ENTITY_ALREADY_EXISTS, "different entity $it exists for input $externalId, $fromUserId, $fromAccountId, $toUserId, $amount")
                     }
 
 }
 
-internal fun invalid(code: ErrCode, msg: String) = Invalid(Err(code, msg))
-
-internal fun internal(msg: String) = invalid(ErrCode.INTERNAL, msg)
+internal fun internal(msg: String) = Invalid(ErrCode.INTERNAL, msg)

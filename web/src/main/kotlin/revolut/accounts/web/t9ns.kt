@@ -7,6 +7,8 @@ import io.ktor.locations.put
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import revolut.accounts.common.Db
+import revolut.accounts.common.Err
+import revolut.accounts.common.ErrCode
 import revolut.accounts.common.Invalid
 import revolut.accounts.common.T9nId
 import revolut.accounts.common.T9nProcessor
@@ -76,7 +78,7 @@ fun Route.t9ns(db: Db, t9nProcessor: T9nProcessor) {
         }
 
         if (err != null) {
-            call.respond(HttpStatusCode.BadRequest, badRequest(err))
+            call.respond(HttpStatusCode.BadRequest, badRequest(Err(ErrCode.BAD_REQUEST, err)))
             return@put finish()
         }
 
@@ -94,19 +96,19 @@ private data class Refined(
         val limit: Int
 )
 
-private fun refine(user: UserId?, t9n: String, limit: Int): Validated<String, Refined> {
+private fun refine(user: UserId?, t9n: String, limit: Int): Validated<Refined> {
     if (user == null) {
-        return Invalid("bad user ID")
+        return Invalid(ErrCode.BAD_REQUEST, "bad user ID")
     }
     if (limit <= 0) {
-        return Invalid("non-positive limit")
+        return Invalid(ErrCode.BAD_REQUEST, "non-positive limit")
     }
     val last = if (t9n.isEmpty())
         null
     else try {
         UUID.fromString(t9n)
     } catch (e: IllegalArgumentException) {
-        return Invalid("bad last transaction ID")
+        return Invalid(ErrCode.BAD_REQUEST, "bad last transaction ID")
     }
     return Valid(Refined(user, last?.let { T9nId(it) }, limit))
 }

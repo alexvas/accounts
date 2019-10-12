@@ -3,8 +3,8 @@ package revolut.accounts.dal
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import revolut.accounts.common.AccountId
-import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode
+import revolut.accounts.common.Invalid
 import revolut.accounts.common.T9n
 import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.T9nId
@@ -18,13 +18,13 @@ import revolute.accounts.dal.jooq.Tables.USERS
 import revolute.accounts.dal.jooq.enums.T9nState
 import revolute.accounts.dal.jooq.tables.records.AccountsRecord
 
-internal fun DSLContext.findT9n(t9nId: T9nId?): Validated<Err, T9n?> = Valid(
+internal fun DSLContext.findT9n(t9nId: T9nId?): Validated<T9n?> = Valid(
         t9nId
                 ?.let {
                     selectFrom(T9NS)
                             .where(T9NS.ID.eq(it.id))
                             .fetchOne()
-                            ?: return invalid(ErrCode.T9N_NOT_FOUND, "no transaction found for $it")
+                            ?: return Invalid(ErrCode.T9N_NOT_FOUND, "no transaction found for $it")
                 }
                 ?.convert()
 )
