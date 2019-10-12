@@ -62,7 +62,7 @@ class DbImpl(
 
         val lastT9n = when (val result = findT9n(lastT9nId)) {
             is Invalid -> return@tx result
-            is Valid -> result.value
+            is Valid -> result.ok
         }
 
         require(limit > 0) { "limit $limit must be positive" }
@@ -91,7 +91,7 @@ class DbImpl(
 
         val lastT9n = when (val result = findT9n(lastT9nId)) {
             is Invalid -> return@tx result
-            is Valid -> result.value
+            is Valid -> result.ok
         }
 
         require(limit > 0) { "limit $limit must be positive" }

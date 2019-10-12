@@ -112,7 +112,7 @@ private fun findAnswer(block: () -> Validated<Any>): Pair<HttpStatusCode, Any> {
             }
             err.httpStatusCode() to ErrorWrapper(err)
         }
-        is Valid -> OK to result.value
+        is Valid -> OK to result.ok
     }
 }
 

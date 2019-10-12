@@ -61,7 +61,7 @@ class T9nProcessorImpl(private val db: Db) : T9nProcessor {
             )
             ) {
             is Invalid -> return result
-            is Valid -> result.value
+            is Valid -> result.ok
         }
 
         launch {
@@ -77,7 +77,7 @@ class T9nProcessorImpl(private val db: Db) : T9nProcessor {
                 log.error("debiting of {} failed with {}", t9n, debited.err)
             }
             is Valid -> {
-                if (debited.value) {
+                if (debited.ok) {
                     creditRecipient(t9n)
                 }
             }

@@ -27,7 +27,7 @@ class DbInitializerTest {
         val accountsResult = db.accounts(userId)
         assertThat(accountsResult).isInstanceOf(Valid::class.java)
 
-        val accounts = (accountsResult as Valid).value
+        val accounts = (accountsResult as Valid).ok
         assertThat(accounts)
                 .isNotEmpty
                 .hasSize(1)
@@ -47,7 +47,7 @@ class DbInitializerTest {
         val accountsResult = db.accounts(charlie)
         assertThat(accountsResult).isInstanceOf(Valid::class.java)
 
-        val accounts = (accountsResult as Valid).value
+        val accounts = (accountsResult as Valid).ok
         assertThat(accounts)
                 .isNotEmpty
                 .hasSize(2)

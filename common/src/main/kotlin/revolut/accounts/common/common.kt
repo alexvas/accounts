@@ -14,7 +14,7 @@ data class Invalid private constructor(val err: Err) : Validated<Nothing>() {
     constructor(code: ErrCode, msg: String = "") : this(Err(code, msg))
 }
 
-data class Valid<R>(val value: R) : Validated<R>()
+data class Valid<R>(val ok: R) : Validated<R>()
 
 object OK
 

@@ -28,7 +28,7 @@ fun Route.t9ns(db: Db, t9nProcessor: T9nProcessor) {
                 call.respond(HttpStatusCode.BadRequest, badRequest(res.err))
                 return@get finish()
             }
-            is Valid -> res.value
+            is Valid -> res.ok
         }
 
         finalAnswer {
@@ -42,7 +42,7 @@ fun Route.t9ns(db: Db, t9nProcessor: T9nProcessor) {
                 call.respond(HttpStatusCode.BadRequest, badRequest(res.err))
                 return@get finish()
             }
-            is Valid -> res.value
+            is Valid -> res.ok
         }
 
         finalAnswer {

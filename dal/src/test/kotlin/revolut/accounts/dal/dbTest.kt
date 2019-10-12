@@ -130,7 +130,7 @@ class DbTest {
 
             val result = db.debitSender(alice2bob.id)
             assertThat(result).isInstanceOf(Valid::class.java)
-            val b = (result as Valid).value
+            val b = (result as Valid).ok
             assertThat(b).isTrue()
 
             // re-read account from database
@@ -157,7 +157,7 @@ class DbTest {
             // oops, it did it again
             val result = db.debitSender(alice2bob.id)
             assertThat(result).isInstanceOf(Valid::class.java)
-            val b = (result as Valid).value
+            val b = (result as Valid).ok
             assertThat(b).isFalse() // <-- the only difference from `Debit sender OK`
 
             // re-read account from database
@@ -432,13 +432,13 @@ internal fun createT9nOk(
 ): T9n {
     val result = db.createOutgoingTransaction(externalId, fromUser, fromAccount, toUser, amount)
     assertThat(result).isInstanceOf(Valid::class.java)
-    return (result as Valid).value
+    return (result as Valid).ok
 }
 
 internal fun settlement(userId: UserId): Account {
     val result = db.accounts(userId)
     assertThat(result).isInstanceOf(Valid::class.java)
-    val accounts = (result as Valid).value
+    val accounts = (result as Valid).ok
     val filtered = accounts.filter { it.settlement }
     assertThat(filtered).hasSize(1)
     return filtered[0]
@@ -449,7 +449,7 @@ internal fun User.settlement() = settlement(id)
 internal fun User.findAccount(id: AccountId): Account {
     val result = db.accounts(this.id)
     assertThat(result).isInstanceOf(Valid::class.java)
-    val accounts = (result as Valid).value
+    val accounts = (result as Valid).ok
     val filtered = accounts.filter { it.id == id }
     assertThat(filtered).hasSize(1)
     return filtered[0]
@@ -458,7 +458,7 @@ internal fun User.findAccount(id: AccountId): Account {
 internal fun User.outgoing(last: T9nId?, limit: Int): List<T9n> {
     val result = db.outgoingTransactions(this.id, last, limit)
     assertThat(result).isInstanceOf(Valid::class.java)
-    return (result as Valid).value
+    return (result as Valid).ok
 }
 
 internal fun User.outgoing() = outgoing(null, Int.MAX_VALUE)
@@ -466,7 +466,7 @@ internal fun User.outgoing() = outgoing(null, Int.MAX_VALUE)
 internal fun User.incoming(last: T9nId?, limit: Int): List<T9n> {
     val result = db.incomingTransactions(this.id, last, limit)
     assertThat(result).isInstanceOf(Valid::class.java)
-    return (result as Valid).value
+    return (result as Valid).ok
 }
 
 internal fun User.incoming() = incoming(null, Int.MAX_VALUE)
@@ -474,14 +474,14 @@ internal fun User.incoming() = incoming(null, Int.MAX_VALUE)
 internal fun User.findT9n(id: T9nId): T9n {
     val outResult = db.outgoingTransactions(this.id, null, MAX_AMOUNT)
     assertThat(outResult).isInstanceOf(Valid::class.java)
-    val outT9ns = (outResult as Valid).value
+    val outT9ns = (outResult as Valid).ok
     val outFiltered = outT9ns.filter { it.id == id }
     assertThat(outFiltered).hasSizeLessThanOrEqualTo(1)
     if (outFiltered.size == 1) return outFiltered[0]
 
     val inResult = db.incomingTransactions(this.id, null, MAX_AMOUNT)
     assertThat(inResult).isInstanceOf(Valid::class.java)
-    val inT9ns = (inResult as Valid).value
+    val inT9ns = (inResult as Valid).ok
     val inFiltered = inT9ns.filter { it.id == id }
     assertThat(inFiltered).hasSize(1)
     return inFiltered[0]
