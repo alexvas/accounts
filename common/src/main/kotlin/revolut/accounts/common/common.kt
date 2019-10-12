@@ -21,6 +21,9 @@ object OK
 val ok = Valid(OK)
 
 enum class ErrCode {
+    /**************************************
+     * error codes of business logic layer
+     **************************************/
     INTERNAL,              // i.e. internal server error
     USER_NOT_FOUND,
     ACCOUNT_NOT_FOUND,
@@ -30,7 +33,10 @@ enum class ErrCode {
     FUNDS_OVERFLOW,        // too much money on receiver's account
     ENTITY_ALREADY_EXISTS, // different entity with the same external ID already exists
 
-    BAD_REQUEST
+    /**************************************
+     * error codes of transport layer
+     **************************************/
+    BAD_REQUEST,
 }
 
 data class Err(
@@ -166,7 +172,7 @@ interface DbInitializer {
 /**
  * Business logic sits here
  */
-interface T9nProcessor : CoroutineScope  {
+interface T9nProcessor : CoroutineScope {
 
     /**
      * periodically check for stale transactions

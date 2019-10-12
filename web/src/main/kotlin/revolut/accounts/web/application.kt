@@ -1,4 +1,5 @@
 @file:JvmName("Main")
+
 package revolut.accounts.web
 
 import com.fasterxml.jackson.databind.SerializationFeature
@@ -12,7 +13,6 @@ import io.ktor.features.CallLogging
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.DefaultHeaders
 import io.ktor.features.StatusPages
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.Forbidden
 import io.ktor.http.HttpStatusCode.Companion.InsufficientStorage
@@ -20,7 +20,6 @@ import io.ktor.http.HttpStatusCode.Companion.InternalServerError
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.http.HttpStatusCode.Companion.PaymentRequired
-import io.ktor.http.content.OutgoingContent
 import io.ktor.jackson.jackson
 import io.ktor.locations.Locations
 import io.ktor.response.respond
@@ -70,12 +69,6 @@ fun Application.module(db: Db, t9nProcessor: T9nProcessor) {
     }
 }
 
-// 500
-internal object ServerError: OutgoingContent.NoContent() {
-    override val status: HttpStatusCode?
-        get() = InternalServerError
-}
-
 internal fun Any.logger(name: String): Logger = LogManager.getLogger(javaClass.`package`.name + "." + name)
 
 private val log = object {}.logger("application")
@@ -89,35 +82,34 @@ private fun Err.httpStatusCode() = when (code) {
     BAD_REQUEST -> BadRequest
 }
 
-internal suspend fun Pc.finalAnswer(block: () -> Validated<Any>) {
-    val (code, answer) = findAnswer(block)
-    call.respond(code, answer)
+internal suspend fun Pc.finalAnswer(validated: Validated<*>) {
+    call.respond(
+            when (validated) {
+                is Valid -> OK
+                is Invalid -> validated.err.httpStatusCode()
+            },
+            validated
+    )
     finish()
 }
 
-private fun findAnswer(block: () -> Validated<Any>): Pair<HttpStatusCode, Any> {
+internal suspend fun Pc.finalAnswer(block: () -> Validated<*>) = finalAnswer((findAnswer(block)))
+
+private fun findAnswer(block: () -> Validated<*>): Validated<*> {
     val result = try {
         block.invoke()
     } catch (t: Throwable) {
         log.error("unexpected error", t)
-        return InternalServerError to ServerError
+        return Invalid(INTERNAL, t.message ?: "")
     }
 
-    return when(result) {
-        is Invalid -> {
-            val err = result.err
-            when(err.code) {
-                INTERNAL -> log.error("internal error: {}", err.msg)
-                else -> log.info("request failed with code {}: {}", err.code, err.msg)
-            }
-            err.httpStatusCode() to ErrorWrapper(err)
+    if (result is Invalid) {
+        val err = result.err
+        when (err.code) {
+            INTERNAL -> log.error("internal error: {}", err.msg)
+            else -> log.info("request failed with code {}: {}", err.code, err.msg)
         }
-        is Valid -> OK to result.ok
     }
+
+    return result
 }
-
-internal data class ErrorWrapper(
-        val error: Err
-)
-
-internal fun badRequest(err: Err) = ErrorWrapper(err)

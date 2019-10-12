@@ -8,9 +8,11 @@ import com.google.gson.JsonSerializer
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.withCharset
 import io.ktor.locations.locations
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.TestApplicationResponse
+import io.ktor.server.testing.contentType
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.withTestApplication
 import io.mockk.clearMocks
@@ -31,6 +33,7 @@ import revolut.accounts.common.UserId
 import revolut.accounts.common.Valid
 import revolut.accounts.web.UserLocation.AccountsLocation
 import java.lang.reflect.Type
+import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -147,12 +150,8 @@ private val gson = GsonBuilder()
 
 internal fun assertContentOk(response: TestApplicationResponse, expected: Any) {
     assertThat(response.status()).isEqualTo(HttpStatusCode.OK)
-
-    val contentType = response.headers["Content-Type"]
-    assertThat(contentType).isNotNull()
-    assertThat(ContentType.Application.Json.match(contentType!!))
-
-    assertThat(response.content).isEqualToIgnoringWhitespace(gson.toJson(expected))
+    assertThat(response.contentType()).isEqualTo(ContentType.Application.Json.withCharset(UTF_8))
+    assertThat(response.content).isEqualToIgnoringWhitespace(gson.toJson(Valid(expected)))
 }
 
 

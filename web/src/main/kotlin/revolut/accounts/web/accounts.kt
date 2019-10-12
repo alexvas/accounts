@@ -1,23 +1,16 @@
 package revolut.accounts.web
 
-import io.ktor.application.call
-import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.locations.get
-import io.ktor.response.respond
 import io.ktor.routing.Route
 import revolut.accounts.common.Db
-import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode
+import revolut.accounts.common.Invalid
 import revolut.accounts.web.UserLocation.AccountsLocation
 
 fun Route.accounts(db: Db) {
 
     get<AccountsLocation> {
-        val userId = it.userLocation.id()
-        if (userId == null) {
-            call.respond(BadRequest, badRequest(Err(ErrCode.BAD_REQUEST, "bad user ID")))
-            return@get finish()
-        }
+        val userId = it.userLocation.id() ?: return@get finalAnswer(Invalid(ErrCode.BAD_REQUEST, "bad user ID"))
 
         finalAnswer {
             db.accounts(userId)
