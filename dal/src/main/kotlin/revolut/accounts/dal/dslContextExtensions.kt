@@ -12,11 +12,11 @@ import revolut.accounts.common.User
 import revolut.accounts.common.UserId
 import revolut.accounts.common.Valid
 import revolut.accounts.common.Validated
-import revolute.accounts.dal.jooq.Tables.ACCOUNTS
-import revolute.accounts.dal.jooq.Tables.T9NS
-import revolute.accounts.dal.jooq.Tables.USERS
-import revolute.accounts.dal.jooq.enums.T9nState
-import revolute.accounts.dal.jooq.tables.records.AccountsRecord
+import revolut.accounts.dal.jooq.Tables.ACCOUNTS
+import revolut.accounts.dal.jooq.Tables.T9NS
+import revolut.accounts.dal.jooq.Tables.USERS
+import revolut.accounts.dal.jooq.enums.T9nState
+import revolut.accounts.dal.jooq.tables.records.AccountsRecord
 
 internal fun DSLContext.findT9n(t9nId: T9nId?): Validated<T9n?> = Valid(
         t9nId

@@ -20,15 +20,15 @@ import revolut.accounts.common.UserId
 import revolut.accounts.common.Valid
 import revolut.accounts.common.Validated
 import revolut.accounts.common.ok
-import revolute.accounts.dal.jooq.Tables.T9NS
-import revolute.accounts.dal.jooq.enums.T9nState.COMPLETED
-import revolute.accounts.dal.jooq.enums.T9nState.DEBITED
-import revolute.accounts.dal.jooq.enums.T9nState.DECLINED
-import revolute.accounts.dal.jooq.enums.T9nState.INITIATED
-import revolute.accounts.dal.jooq.enums.T9nState.OVERFLOW
-import revolute.accounts.dal.jooq.tables.Accounts.ACCOUNTS
-import revolute.accounts.dal.jooq.tables.records.AccountsRecord
-import revolute.accounts.dal.jooq.tables.records.T9nsRecord
+import revolut.accounts.dal.jooq.Tables.T9NS
+import revolut.accounts.dal.jooq.enums.T9nState.COMPLETED
+import revolut.accounts.dal.jooq.enums.T9nState.DEBITED
+import revolut.accounts.dal.jooq.enums.T9nState.DECLINED
+import revolut.accounts.dal.jooq.enums.T9nState.INITIATED
+import revolut.accounts.dal.jooq.enums.T9nState.OVERFLOW
+import revolut.accounts.dal.jooq.tables.Accounts.ACCOUNTS
+import revolut.accounts.dal.jooq.tables.records.AccountsRecord
+import revolut.accounts.dal.jooq.tables.records.T9nsRecord
 import java.time.Duration
 import java.time.Instant
 

@@ -7,7 +7,7 @@ import org.jooq.DSLContext
 import revolut.accounts.common.Account
 import revolut.accounts.common.DbInitializer
 import revolut.accounts.common.User
-import revolute.accounts.dal.jooq.Tables.USERS
+import revolut.accounts.dal.jooq.Tables.USERS
 
 class DbInitializerImpl(
         private val connectionProvider: ConnectionProvider

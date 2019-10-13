@@ -90,7 +90,7 @@ jooq {
                         .withInputSchema("public")
                 )
                 .withTarget(org.jooq.meta.jaxb.Target()
-                        .withPackageName("revolute.accounts.dal.jooq")
+                        .withPackageName("revolut.accounts.dal.jooq")
                 )
         )
     }

@@ -12,10 +12,10 @@ import revolut.accounts.common.T9nExternalId
 import revolut.accounts.common.T9nId
 import revolut.accounts.common.User
 import revolut.accounts.common.UserId
-import revolute.accounts.dal.jooq.enums.T9nState
-import revolute.accounts.dal.jooq.tables.records.AccountsRecord
-import revolute.accounts.dal.jooq.tables.records.T9nsRecord
-import revolute.accounts.dal.jooq.tables.records.UsersRecord
+import revolut.accounts.dal.jooq.enums.T9nState
+import revolut.accounts.dal.jooq.tables.records.AccountsRecord
+import revolut.accounts.dal.jooq.tables.records.T9nsRecord
+import revolut.accounts.dal.jooq.tables.records.UsersRecord
 import java.sql.Timestamp
 import java.time.Instant
 
