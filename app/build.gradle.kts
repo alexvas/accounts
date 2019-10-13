@@ -18,7 +18,7 @@ repositories {
 }
 
 application {
-    mainClassName = "revolut.accounts.integration.MainKt"
+    mainClassName = "revolut.accounts.app.MainKt"
 }
 
 dependencies {

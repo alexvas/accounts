@@ -1,4 +1,4 @@
-package revolut.accounts.integration
+package revolut.accounts.app
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.default

@@ -6,7 +6,7 @@ include(
         "core",
         "web",
         "client",
-        "integration"
+        "app"
 )
 
 pluginManagement {

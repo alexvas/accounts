@@ -31,9 +31,9 @@ First, compile and test the project. From project dir run:
 
 `./gradlew test assemble`
 
-after that go into integration directory:
+after that descend into app directory:
 
-`cd integration`
+`cd app`
 
 and start project with
 
