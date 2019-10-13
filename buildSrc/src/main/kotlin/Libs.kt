@@ -13,43 +13,12 @@ object Libs {
             "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:" +
             Versions.org_jetbrains_kotlin_jvm_gradle_plugin
 
-    const val de_undercouch_download_gradle_plugin: String =
-            "de.undercouch.download:de.undercouch.download.gradle.plugin:" +
-            Versions.de_undercouch_download_gradle_plugin
-
     const val org_liquibase_gradle_gradle_plugin: String =
             "org.liquibase.gradle:org.liquibase.gradle.gradle.plugin:" +
             Versions.org_liquibase_gradle_gradle_plugin
 
-    /**
-     * https://github.com/marcoferrer/kroto-plus.git
-     */
-    const val kroto_plus_coroutines: String =
-            "com.github.marcoferrer.krotoplus:kroto-plus-coroutines:" +
-            Versions.com_github_marcoferrer_krotoplus
-
-    /**
-     * https://github.com/marcoferrer/kroto-plus.git
-     */
-    const val protoc_gen_kroto_plus: String =
-            "com.github.marcoferrer.krotoplus:protoc-gen-kroto-plus:" +
-            Versions.com_github_marcoferrer_krotoplus
-
-    const val com_moowork_node_gradle_plugin: String =
-            "com.moowork.node:com.moowork.node.gradle.plugin:" +
-            Versions.com_moowork_node_gradle_plugin
-
     const val nu_studer_jooq_gradle_plugin: String =
             "nu.studer.jooq:nu.studer.jooq.gradle.plugin:" + Versions.nu_studer_jooq_gradle_plugin
-
-    /**
-     * https://github.com/Kotlin/kotlinx.coroutines
-     */
-    const val kotlinx_coroutines_guava: String = "org.jetbrains.kotlinx:kotlinx-coroutines-guava:" +
-            Versions.kotlinx_coroutines_guava
-
-    const val nebula_deb_gradle_plugin: String = "nebula.deb:nebula.deb.gradle.plugin:" +
-            Versions.nebula_deb_gradle_plugin
 
     /**
      * https://logging.apache.org/log4j/2.x/
@@ -93,18 +62,6 @@ object Libs {
      */
     const val kotlinx_coroutines_core: String = "org.jetbrains.kotlinx:kotlinx-coroutines-core:" +
             Versions.kotlinx_coroutines_core
-
-    /**
-     * https://commons.apache.org/proper/commons-configuration/
-     */
-    const val commons_configuration2: String = "org.apache.commons:commons-configuration2:" +
-            Versions.commons_configuration2
-
-    /**
-     * https://github.com/google/protobuf-gradle-plugin
-     */
-    const val protobuf_gradle_plugin: String = "com.google.protobuf:protobuf-gradle-plugin:" +
-            Versions.protobuf_gradle_plugin
 
     /**
      * https://github.com/FasterXML/jackson-module-kotlin
@@ -153,25 +110,8 @@ object Libs {
      */
     const val jaxb_impl: String = "com.sun.xml.bind:jaxb-impl:" + Versions.com_sun_xml_bind
 
-    /**
-     * http://www.bouncycastle.org/java.html
-     */
-    const val bcpkix_jdk15on: String = "org.bouncycastle:bcpkix-jdk15on:" +
-            Versions.org_bouncycastle
-
-    /**
-     * http://www.bouncycastle.org/java.html
-     */
-    const val bcprov_jdk15on: String = "org.bouncycastle:bcprov-jdk15on:" +
-            Versions.org_bouncycastle
-
     const val otj_pg_embedded: String = "com.opentable.components:otj-pg-embedded:" +
             Versions.otj_pg_embedded
-
-    /**
-     * http://dbsetup.ninja-squad.com/
-     */
-    const val dbsetup_kotlin: String = "com.ninja-squad:DbSetup-kotlin:" + Versions.dbsetup_kotlin
 
     /**
      * http://www.liquibase.org
@@ -179,35 +119,14 @@ object Libs {
     const val liquibase_core: String = "org.liquibase:liquibase-core:" + Versions.liquibase_core
 
     /**
+     * http://commons.apache.org/proper/commons-lang/
+     */
+    const val commons_lang3: String = "org.apache.commons:commons-lang3:" + Versions.commons_lang3
+
+    /**
      * http://assertj.org
      */
     const val assertj_core: String = "org.assertj:assertj-core:" + Versions.assertj_core
-
-    /**
-     * https://github.com/highsource/jaxb2-basics
-     */
-    const val jaxb2_basics: String = "org.jvnet.jaxb2_commons:jaxb2-basics:" + Versions.jaxb2_basics
-
-    /**
-     * http://www.slf4j.org
-     */
-    const val slf4j_simple: String = "org.slf4j:slf4j-simple:" + Versions.slf4j_simple
-
-    /**
-     * http://htmlcleaner.sourceforge.net/
-     */
-    const val htmlcleaner: String = "net.sourceforge.htmlcleaner:htmlcleaner:" +
-            Versions.htmlcleaner
-
-    /**
-     * https://projects.eclipse.org/projects/ee4j
-     */
-    const val jaxws_tools: String = "com.sun.xml.ws:jaxws-tools:" + Versions.jaxws_tools
-
-    /**
-     * http://owner.aeonbits.org
-     */
-    const val owner_java8: String = "org.aeonbits.owner:owner-java8:" + Versions.owner_java8
 
     /**
      * http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp
@@ -223,16 +142,6 @@ object Libs {
      * http://lmax-exchange.github.com/disruptor
      */
     const val disruptor: String = "com.lmax:disruptor:" + Versions.disruptor
-
-    /**
-     * https://github.com/maxmind/geoip-api-java
-     */
-    const val geoip_api: String = "com.maxmind.geoip:geoip-api:" + Versions.geoip_api
-
-    /**
-     * https://github.com/Kotlin/atomicfu
-     */
-    const val atomicfu: String = "org.jetbrains.kotlinx:atomicfu:" + Versions.atomicfu
 
     /**
      * https://github.com/brettwooldridge/HikariCP
@@ -271,51 +180,10 @@ object Libs {
      */
     const val jooq_meta: String = "org.jooq:jooq-meta:" + Versions.org_jooq
 
-    const val koin_core: String = "org.koin:koin-core:" + Versions.org_koin
-
-    const val koin_ktor: String = "org.koin:koin-ktor:" + Versions.org_koin
-
-    const val koin_test: String = "org.koin:koin-test:" + Versions.org_koin
-
-    /**
-     * https://github.com/grpc/grpc-java
-     */
-    const val grpc_bom: String = "io.grpc:grpc-bom:" + Versions.io_grpc
-
-    /**
-     * https://github.com/grpc/grpc-java
-     */
-    const val grpc_netty: String = "io.grpc:grpc-netty:" + Versions.io_grpc
-
-    /**
-     * https://github.com/grpc/grpc-java
-     */
-    const val grpc_protobuf: String = "io.grpc:grpc-protobuf:" + Versions.io_grpc
-
-    /**
-     * https://github.com/grpc/grpc-java
-     */
-    const val grpc_stub: String = "io.grpc:grpc-stub:" + Versions.io_grpc
-
-    /**
-     * https://github.com/grpc/grpc-java
-     */
-    const val protoc_gen_grpc_java: String = "io.grpc:protoc-gen-grpc-java:" + Versions.io_grpc
-
-    /**
-     * https://github.com/ktorio/ktor
-     */
-    const val ktor_auth: String = "io.ktor:ktor-auth:" + Versions.io_ktor
-
     /**
      * https://github.com/ktorio/ktor
      */
     const val ktor_client_apache: String = "io.ktor:ktor-client-apache:" + Versions.io_ktor
-
-    /**
-     * https://github.com/ktorio/ktor
-     */
-    const val ktor_jackson: String = "io.ktor:ktor-jackson:" + Versions.io_ktor
 
     /**
      * https://github.com/ktorio/ktor
@@ -330,7 +198,7 @@ object Libs {
     /**
      * https://github.com/ktorio/ktor
      */
-    const val ktor_html_builder: String = "io.ktor:ktor-html-builder:" + Versions.io_ktor
+    const val ktor_jackson: String = "io.ktor:ktor-jackson:" + Versions.io_ktor
 
     /**
      * https://github.com/ktorio/ktor
@@ -353,19 +221,9 @@ object Libs {
     const val ktor_server_test_host: String = "io.ktor:ktor-server-test-host:" + Versions.io_ktor
 
     /**
-     * http://opencsv.sf.net
+     * https://github.com/ajalt/clikt
      */
-    const val opencsv: String = "com.opencsv:opencsv:" + Versions.opencsv
-
-    /**
-     * http://findbugs.sourceforge.net/
-     */
-    const val jsr305: String = "com.google.code.findbugs:jsr305:" + Versions.jsr305
-
-    /**
-     * https://developers.google.com/protocol-buffers/
-     */
-    const val protoc: String = "com.google.protobuf:protoc:" + Versions.protoc
+    const val clikt: String = "com.github.ajalt:clikt:" + Versions.clikt
 
     /**
      * http://mockk.io

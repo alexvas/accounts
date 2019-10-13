@@ -15,7 +15,7 @@ private val settings = SettingsTools.defaultSettings()
 
 internal fun <T> ConnectionProvider.tx(block: DSLContext.() -> T): T {
     val sqlConn = acquire()
-    val ctx = DSL.using(sqlConn, SQLDialect.POSTGRES_10, settings)
+    val ctx = DSL.using(sqlConn, SQLDialect.POSTGRES, settings)
     return try {
         ctx.transactionResult { configuration -> configuration.dsl().block() }
     } finally {

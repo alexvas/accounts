@@ -54,7 +54,7 @@ dependencies {
     implementation(Libs.jooq_meta)
     implementation(Libs.jooq_codegen)
 
-    implementation("com.github.ajalt:clikt:2.2.0")
+    implementation(Libs.clikt)
 
     implementation(Libs.netty_transport_native_epoll)
     implementation(Libs.netty_transport_native_unix_common)

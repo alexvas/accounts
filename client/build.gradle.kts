@@ -28,7 +28,7 @@ dependencies {
 
     implementation(Libs.jackson_module_kotlin)
     implementation(Libs.jackson_datatype_jsr310)
-    implementation("org.apache.commons:commons-lang3:3.9")
+    implementation(Libs.commons_lang3)
 
     testImplementation(project(":common", JarTest.configurationName))
     testImplementation(Libs.ktor_client_mock_jvm)
