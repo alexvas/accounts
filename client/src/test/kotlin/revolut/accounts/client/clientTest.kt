@@ -18,6 +18,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.headersOf
+import io.ktor.http.withCharset
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -36,9 +37,10 @@ import java.lang.reflect.Type
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlin.text.Charsets.UTF_8
 
 class ClientTest {
-    private val jsonHeaders = headersOf(HttpHeaders.ContentType, Json.toString())
+    private val jsonHeaders = headersOf(HttpHeaders.ContentType, Json.withCharset(UTF_8).toString())
 
     private val alice = newUserId()
     private val bob = newUserId()

@@ -31,10 +31,12 @@ internal class HikariConnectionProvider(
 object Deps {
     val db: Db
     val dbInitializer: DbInitializer
+    val postgresPort: Int
 
     init {
         val embeddedPostgres = EmbeddedPostgres.builder().start()
         val postgresJdbcUrl = embeddedPostgres.getJdbcUrl(POSTGRES, POSTGRES)
+        postgresPort = embeddedPostgres.port
         val liqDb = PostgresDatabase().set("jdbcUrl", postgresJdbcUrl)
         embeddedPostgres.postgresDatabase.connection.use { conn ->
             liqDb.connection = JdbcConnection(conn)

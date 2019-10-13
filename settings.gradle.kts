@@ -6,7 +6,8 @@ include(
         "core",
         "web",
         "client",
-        "app"
+        "app",
+        "white-box"
 )
 
 pluginManagement {

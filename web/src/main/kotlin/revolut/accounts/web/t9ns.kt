@@ -50,24 +50,24 @@ fun Route.t9ns(db: Db, t9nProcessor: T9nProcessor) {
         val recipient = it.recipient()
         val amount = it.amount
 
-        var err: String? = null
+        var err: MutableList<String> = mutableListOf()
         if (external == null) {
-            err = "bad external ID"
+            err.add("bad external ID")
         }
         if (fromUser == null) {
-            err = "bad sender ID"
+            err.add("bad sender ID")
         }
         if (fromAccount == null) {
-            err = "bad from account ID"
+            err.add("bad from account ID")
         }
         if (recipient == null) {
-            err = "bad recipient ID"
+            err.add("bad recipient ID")
         }
         if (amount <= 0) {
-            err = "negative amount"
+            err.add("non-positive amount")
         }
 
-        if (err != null) return@put finalAnswer(Invalid(BAD_REQUEST, err))
+        if (err.isNotEmpty()) return@put finalAnswer(Invalid(BAD_REQUEST, err.joinToString()))
 
         check(external != null && fromUser != null && fromAccount != null && recipient != null)
 

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="60">
+  <Properties>
+    <Property name="LOGFOLDER">/tmp/accounts-logs</Property>
+    <Property name="PATTERN">[%d{HH:mm:ss,SSS}] [%t] %level %logger @%X{requestid} ~ %msg%n</Property>
+  </Properties>
+
+
+  <Appenders>
+
+    <RandomAccessFile
+        name="DETAIL_AP"
+        fileName="${LOGFOLDER}/detail.log"
+        immediateFlush="false"
+    >
+      <patternLayout pattern="${PATTERN}"/>
+      <ThresholdFilter level="debug" onMatch="ACCEPT" onMismatch="DENY"/>
+    </RandomAccessFile>
+
+    <RandomAccessFile
+        name="ROOT_AP"
+        fileName="${LOGFOLDER}/root.log"
+        immediateFlush="false"
+    >
+      <patternLayout pattern="${PATTERN}"/>
+      <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
+    </RandomAccessFile>
+
+    <RandomAccessFile
+        name="WARN_AP"
+        fileName="${LOGFOLDER}/warn.log"
+        immediateFlush="false"
+    >
+      <patternLayout pattern="${PATTERN}"/>
+      <ThresholdFilter level="warn" onMatch="ACCEPT" onMismatch="DENY"/>
+    </RandomAccessFile>
+
+  </Appenders>
+  <Loggers>
+
+    <Root level="debug" includeLocation="false">
+<!--      <AppenderRef ref="DETAIL_AP"/>-->
+      <AppenderRef ref="ROOT_AP"/>
+      <AppenderRef ref="WARN_AP"/>
+    </Root>
+
+    <Logger name="revolut" level="debug"/>
+    <Logger name="revolut.accounts.dal" level="trace"/>
+
+  </Loggers>
+</Configuration>

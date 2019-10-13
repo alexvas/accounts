@@ -19,6 +19,7 @@ import io.ktor.http.URLBuilder
 import io.ktor.http.content.TextContent
 import io.ktor.http.contentType
 import io.ktor.http.takeFrom
+import io.ktor.http.withCharset
 import org.apache.commons.lang3.reflect.TypeUtils.parameterize
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -37,6 +38,7 @@ import revolut.accounts.common.Validated
 import java.lang.reflect.Type
 import java.time.Instant
 import java.time.format.DateTimeFormatter
+import kotlin.text.Charsets.UTF_8
 
 /**
  * The class below corresponds to serialized form of Validated, i.e. either Valid or Invalid
@@ -82,7 +84,13 @@ class ApiHttpClient(
         return httpClient.typedCall(
                 tType = T9n::class.java,
                 method = HttpMethod.Put,
-                path = "api/users/${user.id}/transactions/create"
+                path = "api/users/${user.id}/transactions/create",
+                params = ParametersBuilder().also {
+                    it["external"] = external.id.toString()
+                    it["from_account"] = fromAccount.id.toString()
+                    it["recipient"] = recipient.id.toString()
+                    it["amount"] = amount.toString()
+                }
         )
     }
 
@@ -101,8 +109,8 @@ class ApiHttpClient(
     }
 
     private suspend fun HttpResponse.handleResponse(): Validated<String> =
-            if (status == HttpStatusCode.OK && contentType() == ContentType.Application.Json) try {
-                Valid(readText(charset = Charsets.UTF_8))
+            if (status == HttpStatusCode.OK && contentType() == ContentType.Application.Json.withCharset(UTF_8)) try {
+                Valid(readText(charset = UTF_8))
             } catch (e: RuntimeException) {
                 Invalid(ErrCode.CALL_ERROR, dumpDetails("unable to read (${e.message})"))
             } else
@@ -114,7 +122,7 @@ class ApiHttpClient(
         details += "response status = $status"
         details += "response contentType = ${contentType()}"
         try {
-            val responseText = readText(charset = Charsets.UTF_8)
+            val responseText = readText(charset = UTF_8)
             if (responseText.isNotBlank()) {
                 details += "response text $responseText"
             }
