@@ -37,6 +37,12 @@ enum class ErrCode {
      * error codes of transport layer
      **************************************/
     BAD_REQUEST,
+
+    /**************************************
+     * error codes of client layer
+     **************************************/
+    CALL_ERROR,            // error while calling API server
+    BAD_SERVER_RESPONSE,   // server returned malformed response
 }
 
 data class Err(
@@ -193,4 +199,15 @@ interface T9nProcessor : CoroutineScope {
             amount: Int
     ): Validated<T9n>
 
+}
+
+interface ApiClient {
+
+    suspend fun accounts(user: UserId): Validated<List<Account>>
+
+    suspend fun outgoingT9ns(user: UserId, last: T9nId? = null, limit: Int? = null): Validated<List<T9n>>
+
+    suspend fun incomingT9ns(user: UserId, last: T9nId? = null, limit: Int? = null): Validated<List<T9n>>
+
+    suspend fun createT9n(user: UserId, external: T9nExternalId, fromAccount: AccountId, recipient: UserId, amount: Int): Validated<T9n>
 }

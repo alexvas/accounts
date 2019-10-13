@@ -49,22 +49,20 @@ class T9nTest {
             alice.newAccount(2_000, false)
     )
 
-    private val bobAccounts = listOf(
-            bob.newAccount(3_000)
-    )
+    private val bobAccount = bob.newAccount(3_000)
 
     private val outgoing = listOf(
-            aliceAccounts[0].newT9n(bobAccounts[0], INITIATED, 10),
-            aliceAccounts[0].newT9n(bobAccounts[0], INITIATED, 20),
-            aliceAccounts[0].newT9n(bobAccounts[0], DECLINED, 30),
-            aliceAccounts[1].newT9n(bobAccounts[0], DEBITED, 40),
-            aliceAccounts[1].newT9n(bobAccounts[0], COMPLETED, 50),
-            aliceAccounts[1].newT9n(bobAccounts[0], OVERFLOW, 60)
+            aliceAccounts[0].newT9n(bobAccount, INITIATED, 10),
+            aliceAccounts[0].newT9n(bobAccount, INITIATED, 20),
+            aliceAccounts[0].newT9n(bobAccount, DECLINED, 30),
+            aliceAccounts[1].newT9n(bobAccount, DEBITED, 40),
+            aliceAccounts[1].newT9n(bobAccount, COMPLETED, 50),
+            aliceAccounts[1].newT9n(bobAccount, OVERFLOW, 60)
     )
 
     private val incoming = listOf(
-            bobAccounts[0].newT9n(aliceAccounts[0], INITIATED, 70),
-            bobAccounts[0].newT9n(aliceAccounts[0], COMPLETED, 80)
+            bobAccount.newT9n(aliceAccounts[0], INITIATED, 70),
+            bobAccount.newT9n(aliceAccounts[0], COMPLETED, 80)
     )
 
     private val db: Db = mockk()

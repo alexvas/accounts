@@ -32,6 +32,8 @@ import revolut.accounts.common.Db
 import revolut.accounts.common.Err
 import revolut.accounts.common.ErrCode.ACCOUNT_NOT_FOUND
 import revolut.accounts.common.ErrCode.BAD_REQUEST
+import revolut.accounts.common.ErrCode.BAD_SERVER_RESPONSE
+import revolut.accounts.common.ErrCode.CALL_ERROR
 import revolut.accounts.common.ErrCode.ENTITY_ALREADY_EXISTS
 import revolut.accounts.common.ErrCode.FUNDS_OVERFLOW
 import revolut.accounts.common.ErrCode.INSUFFICIENT_FUNDS
@@ -80,6 +82,7 @@ private fun Err.httpStatusCode() = when (code) {
     INSUFFICIENT_FUNDS -> PaymentRequired
     FUNDS_OVERFLOW -> InsufficientStorage
     BAD_REQUEST -> BadRequest
+    CALL_ERROR, BAD_SERVER_RESPONSE -> throw IllegalArgumentException("it is intended to use $code on the client side, not a server side")
 }
 
 internal suspend fun Pc.finalAnswer(validated: Validated<*>) {

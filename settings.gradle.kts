@@ -5,6 +5,7 @@ include(
         "dal",
         "core",
         "web",
+        "client",
         "integration"
 )
 

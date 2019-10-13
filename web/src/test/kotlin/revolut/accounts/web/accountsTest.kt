@@ -1,6 +1,7 @@
 package revolut.accounts.web
 
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonPrimitive
 import com.google.gson.JsonSerializationContext
@@ -136,7 +137,7 @@ class AccountsTest {
 }
 
 private class InstantSerializer : JsonSerializer<Instant> {
-    override fun serialize(src: Instant?, typeOfSrc: Type?, context: JsonSerializationContext?) =
+    override fun serialize(src: Instant?, typeOfSrc: Type?, context: JsonSerializationContext?): JsonElement =
             if (src == null)
                 JsonNull.INSTANCE
             else

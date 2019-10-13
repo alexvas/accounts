@@ -325,6 +325,11 @@ object Libs {
     /**
      * https://github.com/ktorio/ktor
      */
+    const val ktor_client_mock_jvm: String = "io.ktor:ktor-client-mock-jvm:" + Versions.io_ktor
+
+    /**
+     * https://github.com/ktorio/ktor
+     */
     const val ktor_html_builder: String = "io.ktor:ktor-html-builder:" + Versions.io_ktor
 
     /**
