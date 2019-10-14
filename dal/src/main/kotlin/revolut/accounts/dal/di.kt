@@ -11,6 +11,7 @@ import liquibase.resource.FileSystemResourceAccessor
 import org.jooq.ConnectionProvider
 import revolut.accounts.common.Db
 import revolut.accounts.common.DbInitializer
+import java.io.File
 import java.sql.Connection
 import javax.sql.DataSource
 
@@ -27,6 +28,8 @@ internal class HikariConnectionProvider(
     }
 }
 
+private fun File.takeIfFine() = takeIf { exists() && isFile && canRead() }
+
 // ragged-DI
 object Deps {
     val db: Db
@@ -38,10 +41,17 @@ object Deps {
         val postgresJdbcUrl = embeddedPostgres.getJdbcUrl(POSTGRES, POSTGRES)
         postgresPort = embeddedPostgres.port
         val liqDb = PostgresDatabase().set("jdbcUrl", postgresJdbcUrl)
+
+        val changelog =
+                File("src/main/liquibase/changelog.xml").takeIfFine()
+                        ?: File("../dal/src/main/liquibase/changelog.xml").takeIfFine()
+                        ?: File("dal/src/main/liquibase/changelog.xml").takeIfFine()
+                        ?: throw IllegalStateException("liquibase changelog.xml not found")
+
         embeddedPostgres.postgresDatabase.connection.use { conn ->
             liqDb.connection = JdbcConnection(conn)
             Liquibase(
-                    "../dal/src/main/liquibase/changelog.xml",
+                    changelog.canonicalPath,
                     FileSystemResourceAccessor(),
                     liqDb
             ).update(Contexts())
