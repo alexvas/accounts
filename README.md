@@ -114,7 +114,7 @@ result of the previous operation marked with the same external ID.
 
 ### Architecture
 
-The project is small, yet decoupling is paramount. Divide et impera. The project consists of 7 modules: 
+The project is small, yet decoupling is of paramount importance. Divide et impera. The project consists of 7 modules: 
 `common`, `dal`, `core`, `web`, `client`, `app` and `white-box`. `common` contains data models and common
 interface definitions, all other modules depend on this one. `dal`, `core`, `web` and `client` depend 
 _only_ on `common` and are completely independent from each other. `dal` interacts with database. 
